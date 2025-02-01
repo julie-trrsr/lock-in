@@ -2,6 +2,13 @@
 *.env
 **/*.env
 
+#movie 
+*.mp4
+**/*.mp4
+#jpeg
+*.jpeg
+**/*.jpeg
+
 # Ignore Python cache and compiled files
 __pycache__/
 **/__pycache__/

@@ -1,7 +1,8 @@
 import openai
 import json
 from system_prompt import *
-from openai import OpenAI
+from anthropic import Anthropic
+MODEL_NAME = "claude-3-sonnet-20240229"
 from brain_agent import EEGAgent
 from typing import Dict, Any, List, Optional
 
@@ -15,17 +16,18 @@ class TopLevelAgent:
 
     def __init__(
         self,
+        eeg_agent = EEGAgent,
         vision_agent: VisionAgent,
-        model_name: str = "gpt-4-0613"
     ):
+        self.client = Anthropic()
         self.vision_agent = vision_agent
+        self.model_name = MODEL_NAME
         self.eeg_agent = eeg_agent
-        self.model_name = model_name
 
         # Prepare the function schemas for the ChatCompletion call
-        self.functions = [
+        self.tool_descriptions = [
             self.vision_agent.get_function_schema(),
-            self.eeg_agent.get_function_schema()
+            self.eeg_agent.get_function_schema(),
         ]
 
         # We'll maintain a running conversation log:

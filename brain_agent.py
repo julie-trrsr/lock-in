@@ -1,38 +1,65 @@
 import openai
 import json
-
 openai.api_key = "key"
+from openai import OpenAI
+from typing import List, Dict, Any
 
-def eeg_agent(eeg_data: dict) -> str:
+brain_agent_instructions = "You are an expert in neuroscience and behavioral analysis."
+
+class EEGAgent:
     """
-    Analyze EEG data and return a textual summary.
-    
-    Parameters:
-      eeg_data (dict): Structured data, for example:
+    The EEG Agent is responsible for processing EEG data.
+    It exposes a function 'process_eeg' that the assistant can call
+    to analyze the EEG data and return a summary.
+    """
+
+    def __init__(self, model_name: str = "gpt-4-0613"):
+      self.model_name = model_name
+      self.client = OpenAI()
+      self.assistant = self.client.beta.assistants.create(
+      instructions= brain_agent_instructions,
+      model="gpt-4o",
+      tools=[
         {
-          "time_window": "2025-01-01T12:00:00Z to 2025-01-01T12:05:00Z",
-          "focus_level": {"average": 65, "min": 40, "max": 80},
-          "alpha_wave": {"average": 20, "spikes": ["12:02:15", "12:03:40"]},
-          "beta_wave": {"average": 15, "drops": ["12:02:50"]}
+          "type": "function",
+          "function": {
+            "name": "process_eeg",
+            "description": "Get the summary statistics (mean, deviation of alpha, beta, gamma waves and attention levels) for the eeg data you have been provided",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "eeg_data": {
+                  "type": "json",
+                  "description": ""
+                },
+              },
+              "required": ["eeg_data"]
+            }
+          }
         }
-    
-    Returns:
-      A string summary of the EEG analysis.
-    """
-    messages = [
-        {"role": "system", "content": "You are an expert in neuroscience and behavioral analysis."},
-        {"role": "user", "content": (
-            "Please analyze the following EEG data and provide a detailed summary highlighting "
-            "average focus levels, any significant dips or spikes, and any notable patterns in brain waves.\n\n"
-            f"EEG Data: {json.dumps(eeg_data, indent=2)}"
-        )}
-    ]
-    
-    response = openai.ChatCompletion.create(
-        model="gpt-4-0613",  # Replace with the model best suited for your needs.
-        messages=messages,
-        temperature=0.7
+      ]
     )
-    
-    summary = response['choices'][0]['message']['content']
-    return summary
+
+    def get_function_schema(self) -> Dict[str, Any]:
+      """
+      Returns a JSON schema describing the function that the AI assistant can call.
+      """
+      return {
+        "name": "process_eeg",
+        "description": "Have an OpenAI Assistant, specialising in EEG brainwave Data analysis, analyze EEG data (focus levels, wave changes) and return a textual summary.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "eeg_data": {
+                    "type": "object",
+                    "description": (
+                      "Structured EEG information, e.g. {'time_window': ..., 'focus_level': ..., "
+                      "'alpha_wave': ..., 'beta_wave': ... }"
+                    )
+                }
+            },
+            "required": ["eeg_data"]
+        }
+      }
+
+    def process_eeg(self, eeg_data: Dict[str, Any]) -> str:

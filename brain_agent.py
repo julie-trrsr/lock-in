@@ -6,7 +6,6 @@ from openai import OpenAI
 MODEL_NAME = "4o"
 
 brain_agent_instructions = "You are an expert in neuroscience and behavioral analysis."
-analyse_eeg_prompt = "Analyse this EEG data."
 
 class EEGAgent:
     """
@@ -23,6 +22,7 @@ class EEGAgent:
 
         # Summaries stored for references (if needed)
         self.tool_summaries = {"get_eeg_summary": eeg_tool}
+        self.analyse_eeg_prompt = "Analyse this EEG data."
         self.instructions = brain_agent_instructions
 
         # Initialize the OpenAI client
@@ -39,6 +39,8 @@ class EEGAgent:
         # Create a fresh conversation thread
         self.thread = self.client.beta.threads.create()
 
+    def set_default_prompt(self, prompt):
+       self.analyse_eeg_prompt = prompt
     def process_eeg_data(self, eeg_data: Dict[str, Any]) -> str:
       """
       This method sends the EEG data to the assistant for analysis,
@@ -48,7 +50,7 @@ class EEGAgent:
 
       # 1. Create a "user" message in the conversation, providing a prompt plus the data.
       user_message_content = (
-        f"{analyse_eeg_prompt}\n\n"
+        f"{self.analyse_eeg_prompt}\n\n"
         f"Here is the EEG data in JSON format:\n{json.dumps(eeg_data)}\n\n"
         "Please analyze the data and provide your insights."
       )
@@ -62,18 +64,20 @@ class EEGAgent:
       # 2. Create a run to let the assistant process the conversation
       run = self.client.beta.threads.runs.create(
         thread_id=self.thread.id,
-        assistant_id=self.assistant.id
+        assistant_id=self.assistant.id,
+        tool_choice = "required",
+        tools = {"type" : "function", "function" : self.tool_summaries["get_eeg_summary"]}
       )
 
       # 3. We now step through the run until we reach a "final" response.
       response = None
       while True:
         # Move the run forward (assistant processes next step)
-        run = self.client.beta.threads.runs.update(
-          thread_id=self.thread.id,
-          run_id=run.id,
-          action="next"
-        )
+        # run = self.client.beta.threads.runs.update(
+        #   thread_id=self.thread.id,
+        #   run_id=run.id,
+        #   action="next"
+        # )
 
         # Check the run status
         if run.status == "completed":
@@ -83,7 +87,6 @@ class EEGAgent:
           response = self.client.beta.threads.messages.list(
             thread_id=self.thread.id
           )[-1]
-
           break
 
         elif run.status == "action_required":

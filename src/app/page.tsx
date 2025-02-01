@@ -1,14 +1,14 @@
 "use client"
-import Image from "next/image";
-import { MouseEventHandler, useState } from "react";
+import { useState } from "react";
 import { FaUser } from "react-icons/fa"
-import { CiUser, CiUnlock, CiLock } from "react-icons/ci";
+import { CiUnlock, CiLock } from "react-icons/ci";
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 export default function Home() {
   const [lockedIn, setLockedIn] = useState(false);
 
   return (
-    <div className="flex flex-1 items-center justify-center justify-items-center min-h-screen p-8 sm:p-20">
+    <div className="relative flex flex-col items-center justify-center justify-items-center min-h-screen p-8 sm:p-20">
       <div className="absolute top-0 right-0 rounded-full hover:bg-neutral-300 hover:cursor-pointer mt-4 mr-4">
         <FaUser className="w-12 h-12 p-2 text-black"/>
       </div>
@@ -22,20 +22,46 @@ export default function Home() {
           </div>
         </div>
       ) : (
-        <div className="absolute top-0 left-0 ml-4 mt-4 hover:cursor-pointer" onClick={e => setLockedIn(false)}>
-          <CiLock className="w-14 h-14 p-2" />
-        </div>
+        <>
+          <div className="absolute top-0 left-0 ml-4 mt-4 hover:cursor-pointer" onClick={e => setLockedIn(false)}>
+            <CiLock className="w-14 h-14 p-2" />
+          </div>
+          <div className="flex flex-1 w-full">
+            <div className="basis-2/3 p-4 pr-2">
+              <div className="bg-stone-800 w-full h-full rounded-2xl"></div>
+            </div>
+            <div className="basis-1/3 p-4 pl-2">
+              <div className="flex flex-col bg-stone-200 w-full h-full rounded-2xl items-start justify-start">
+                <div className="rounded-2xl w-full h-full text-black text-base text-left p-4">
+                  <Message timecode="10:30" content="This is the first message" />
+                  <Message timecode="11:30" content="This is the second message" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
 }
 
 
-function LockedIn(
-  handleLockIn: MouseEventHandler<HTMLDivElement>
-) {
+function Message({
+  timecode,
+  content
+}: {
+  timecode: string,
+  content: string
+}) {
   return (
-    <>
-    </>
+    <div className="flex flex-row">
+      <p className="mr-4 text-stone-500">
+        {timecode}
+      </p>
+      <p className="">
+        {content}
+      </p>
+    </div>
   );
 }
+

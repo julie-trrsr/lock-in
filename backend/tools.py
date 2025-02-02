@@ -14,14 +14,14 @@ def setup_database(conn):
 
         cur.execute('''
         CREATE TABLE IF NOT EXISTS log_table (
-            log_id INTEGER PRIMARY KEY,
+            log_id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER
         )
         ''')
 
         cur.execute('''
         CREATE TABLE IF NOT EXISTS message_table (
-            message_id INTEGER PRIMARY KEY,
+            message_id INTEGER PRIMARY KEY AUTOINCREMENT,
             log_id INTEGER,
             time TEXT NOT NULL,
             content TEXT NOT NULL
@@ -93,48 +93,77 @@ def does_username_already_exist(username, cursor):
         raise
 
 
-def add_log(log_id, user_id, cursor):
+def add_log(user_id, cursor):
     """
     Add a new log entry to the `log_table`.
 
     Args:
-    - log_id (int)
     - user_id (int)
     - cursor (sqlite3.Cursor)
+
+    Returns:
+    - log_id (int)
     """
     try:
-        cursor.execute("INSERT INTO log_table VALUES (?, ?)", (log_id, user_id))
+        cursor.execute("INSERT INTO log_table (user_id) VALUES (?)", (user_id,))
+        log_id = cursor.lastrowid
+        return log_id
 
     except sqlite3.IntegrityError as e:
-        print(f"IntegrityError when adding log {log_id} for user {user_id}: {e}")
+        print(f"IntegrityError when adding log for user {user_id}: {e}")
         raise
 
     except sqlite3.DatabaseError as e:
-        print(f"DatabaseError when adding log {log_id} for user {user_id}: {e}")
+        print(f"DatabaseError when adding log for user {user_id}: {e}")
         raise
 
 
-def add_message(message_id, log_id, time, content, cursor):
+def add_message(log_id, time, content, cursor):
     """
     Add a new message entry to the `message_table`.
 
     Args:
-    - message_id (int)
     - log_id (int)
     - time (str): The timestamp of when the message was created.
     - content (str): The content of the message.
     - cursor (sqlite3.Cursor)
+
+    Returns:
+    - message_id (int)
     """
     try:
-        cursor.execute("INSERT INTO message_table (message_id, log_id, time, content) VALUES (?, ?, ?, ?)",
-                    (message_id, log_id, time, content))
+        cursor.execute("INSERT INTO message_table (log_id, time, content) VALUES (?, ?, ?)",
+                    (log_id, time, content))
+        message_id = cursor.lastrowid
+        return message_id
         
     except sqlite3.IntegrityError as e:
-        print(f"IntegrityError when adding message {message_id} for log {log_id}: {e}")
+        print(f"IntegrityError when adding message for log {log_id}: {e}")
         raise
 
     except sqlite3.DatabaseError as e:
-        print(f"DatabaseError when adding message {message_id} for log {log_id}: {e}")
+        print(f"DatabaseError when adding message for log {log_id}: {e}")
+        raise
+
+
+def get_user_infos_from_user_id(user_id, cursor):
+    """
+    Retrieve user information based on the user_id.
+
+    Args:
+    - user_id (int).
+    - cursor (sqlite3.Cursor)
+
+    Returns:
+    - tuple: A tuple containing (username, password) if the user exists, or None if the user does not exist.
+    """
+    try:
+        cursor.execute("SELECT username, password FROM user_table WHERE user_id = ?", (user_id,))
+        user_info = cursor.fetchone()
+        return user_info
+    
+    except sqlite3.DatabaseError as e:
+        print(f"DatabaseError when retrieving user info for {user_id}: {e}")
         raise
 
 
@@ -257,3 +286,17 @@ def get_all_messages_per_user(user_id, cursor):
         print(f"DatabaseError when retrieving all messages for user {user_id}: {e}")
         raise
 
+
+def get_log_id_per_user(user_id, cursor):
+    try:
+        result = cursor.execute("SELECT log_id FROM log_table WHERE user_id = ?", (user_id,))
+        rows = result.fetchall()
+
+        logs = []
+        for row in rows:
+            logs.append(row[0])
+        return logs
+    
+    except sqlite3.DatabaseError as e:
+        print(f"DatabaseError when retrieving all logs for user {user_id}: {e}")
+        raise

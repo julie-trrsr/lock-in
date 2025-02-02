@@ -11,9 +11,9 @@ import { error } from "console";
 export default function Home() {
   const [lockedIn, setLockedIn] = useState(false);
   const [animating, setAnimating] = useState(false);
-  const [userId, setUserId] = useState("");
+  const [userId, setUserId] = useState("a");
   const [openLogin, setOpenLogin] = useState(false);
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState("maria");
   const [password, setPassword] = useState("");
   const [incorrectPassword, setIncorrectPassword] = useState(false);
   const [userAlreadyExists, setUserAlreadyExists] = useState(false);
@@ -65,92 +65,114 @@ export default function Home() {
 
   return (
     <div className="relative flex flex-col items-center justify-center justify-items-center min-h-screen p-8 sm:p-20">
-      <div className="absolute top-0 right-0 rounded-full hover:bg-neutral-300 mt-4 mr-4">
-        <Login isOpen={openLogin} onClose={() => { setUsername(""); setPassword(""); setIncorrectPassword(false); setUserAlreadyExists(false); setOpenLogin(false); } }>
-          <div className="flex flex-col">
-            <label
-              htmlFor="username"
-              className="text-left block mb-3 text-lg font-medium text-slate-800"
-            >
-              Username:
-              <input
-                id="username"
-                className="w-full p-1 border border-slate-300 rounded-md resize-none text-base focus:ring-2 focus:ring-inherit focus:border-inherit focus:outline-none"
-                value={username}
-                onChange={(e) => { setIncorrectPassword(false); setUserAlreadyExists(false); setUsername(e.target.value); }}
-                required={true}
-              />
-            </label>
-            <label
-              htmlFor="password"
-              className="text-left block mb-3 text-lg font-medium text-slate-800"
-            >
-              Password:
-              <input
-                id="password"
-                className="w-full p-1 border border-slate-300 rounded-md resize-none text-base focus:ring-2 focus:ring-inherit focus:border-inherit focus:outline-none"
-                value={password}
-                onChange={(e) => { setIncorrectPassword(false); setUserAlreadyExists(false); setPassword(e.target.value); }}
-                required={true}
-                type="password"
-              />
-            </label>
-            {incorrectPassword && (
-              <p className="text-md text-red-600 text-left">
-                Incorrect username or password, please try again.
-              </p>
-            )}
-            {userAlreadyExists && (
-              <p className="text-md text-red-600 text-left">
-                Username already taken, please try again.
-              </p>
-            )}
-            <div className="flex w-full justify-center items-center mb-2 mt-3">
-              <div className="w-full text-white text-center text-lg font-medium p-1 px-4 bg-blue-400 hover:bg-blue-500 rounded-xl hover:cursor-pointer" onClick={handleSubmit}>
-                Enter
-              </div>
-            </div>
-            <div className="flex w-full justify-center items-center">
-              <div className="text-center hover:underline hover:cursor-pointer text-lg font-medium p-1 rounded-xl" onClick={handleSignUp}>
-                Sign up
-              </div>
-            </div>
-          </div>
-        </Login>
-        {userId == "" ? (
-          <FaUser className="w-12 h-12 p-2 text-black hover:cursor-pointer"
-                  title="Log in"
-                  onClick={() => setOpenLogin(true)}/>
-        ) : (
-          <div className="flex w-12 h-12 bg-black rounded-full justify-center items-center hover:cursor-default">
-            <p className="text-xl text-white text-center p-2">
-              {username.charAt(0).toUpperCase()}
-            </p>
-          </div>
-        )}
-      </div>
       {!lockedIn && !animating ? (
-        <div className="flex flex-col gap-8 row-start-2 items-center relative">
-          <div onClick={handleUnlockClick} className="hover:cursor-pointer">
-            <CiUnlock className="w-20 h-20" />
+        <>
+          <div className="absolute top-0 right-0 rounded-full hover:bg-neutral-300 mt-4 mr-4">
+            <Login isOpen={openLogin} onClose={() => { setUsername(""); setPassword(""); setIncorrectPassword(false); setUserAlreadyExists(false); setOpenLogin(false); } }>
+              <div className="flex flex-col">
+                <label
+                  htmlFor="username"
+                  className="text-left block mb-3 text-lg font-medium text-slate-800"
+                >
+                  Username:
+                  <input
+                    id="username"
+                    className="w-full p-1 border border-slate-300 rounded-md resize-none text-base focus:ring-2 focus:ring-inherit focus:border-inherit focus:outline-none"
+                    value={username}
+                    onChange={(e) => { setIncorrectPassword(false); setUserAlreadyExists(false); setUsername(e.target.value); }}
+                    required={true}
+                  />
+                </label>
+                <label
+                  htmlFor="password"
+                  className="text-left block mb-3 text-lg font-medium text-slate-800"
+                >
+                  Password:
+                  <input
+                    id="password"
+                    className="w-full p-1 border border-slate-300 rounded-md resize-none text-base focus:ring-2 focus:ring-inherit focus:border-inherit focus:outline-none"
+                    value={password}
+                    onChange={(e) => { setIncorrectPassword(false); setUserAlreadyExists(false); setPassword(e.target.value); }}
+                    required={true}
+                    type="password"
+                  />
+                </label>
+                {incorrectPassword && (
+                  <p className="text-md text-red-600 text-left">
+                    Incorrect username or password, please try again.
+                  </p>
+                )}
+                {userAlreadyExists && (
+                  <p className="text-md text-red-600 text-left">
+                    Username already taken, please try again.
+                  </p>
+                )}
+                <div className="flex w-full justify-center items-center mb-2 mt-3">
+                  <div className="w-full text-white text-center text-lg font-medium p-1 px-4 bg-blue-400 hover:bg-blue-500 rounded-xl hover:cursor-pointer" onClick={handleSubmit}>
+                    Enter
+                  </div>
+                </div>
+                <div className="flex w-full justify-center items-center">
+                  <div className="text-center hover:underline hover:cursor-pointer text-lg font-medium p-1 rounded-xl" onClick={handleSignUp}>
+                    Sign up
+                  </div>
+                </div>
+              </div>
+            </Login>
+            {userId == "" ? (
+              <FaUser className="w-12 h-12 p-2 text-black hover:cursor-pointer"
+                      title="Log in"
+                      onClick={() => setOpenLogin(true)}/>
+            ) : (
+              <div className="flex w-12 h-12 bg-black rounded-full justify-center items-center hover:cursor-default">
+                <p className="text-xl text-white text-center p-2">
+                  {username.charAt(0).toUpperCase()}
+                </p>
+              </div>
+            )}
           </div>
-          <div className="text-5xl text-center sm:text-left">
-            Lock in!
+          <div className="flex flex-col gap-8 row-start-2 items-center relative">
+            <div onClick={handleUnlockClick} className="hover:cursor-pointer">
+              <CiUnlock className="w-20 h-20" />
+            </div>
+            <div className="text-5xl text-center sm:text-left">
+              Lock in!
+            </div>
           </div>
-        </div>
+        </>
       ) : animating ? (
-        <div className="flex flex-col gap-8 row-start-2 items-center">
-          <motion.div
-            className=""
-            initial={{ position: "relative", x: "50%", y: "50%", scale: 1}}
-            animate={{ position: "absolute", top: 0, left: 0, marginLeft: "1rem", marginTop: "1rem", scale: 0.5 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-          >
-            <CiLock className="w-20 h-20" />
-          </motion.div>
-        </div>
+        <>
+          {userId != "" && (
+            <div className="absolute top-0 right-0 rounded-full hover:bg-neutral-300 mt-4 mr-4">
+              <div className="flex w-12 h-12 bg-black rounded-full justify-center items-center hover:cursor-default">
+                <p className="text-xl text-white text-center p-2">
+                  {username.charAt(0).toUpperCase()}
+                </p>
+              </div>
+            </div>
+          )}
+          <div className="flex flex-col gap-8 row-start-2 items-center">
+            <motion.div
+              className=""
+              initial={{ position: "absolute", top: "44%", left: "50%", transform: "translate(-50%, -50%) scale(1)"}}
+              animate={{ position: "fixed", top: 0, left: 0, marginLeft: "2.75rem", marginTop: "2.75rem", transform: "translate(-50%, -50%) scale(0.5)" }}
+              transition={{ duration: 1, ease: "easeOut" }}
+            >
+              <CiLock className="w-20 h-20" />
+            </motion.div>
+          </div>
+        </>
       ) : (
         <>
+          {userId != "" && (
+            <div className="absolute top-0 right-0 rounded-full hover:bg-neutral-300 mt-4 mr-4">
+              <div className="flex w-12 h-12 bg-black rounded-full justify-center items-center hover:cursor-default">
+                <p className="text-xl text-white text-center p-2">
+                  {username.charAt(0).toUpperCase()}
+                </p>
+              </div>
+            </div>
+          )}
           <div className="absolute top-0 left-0 ml-4 mt-4 hover:cursor-pointer" onClick={e => setLockedIn(false)}>
             <CiLock className="w-14 h-14 p-2" />
           </div>

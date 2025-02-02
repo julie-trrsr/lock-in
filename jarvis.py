@@ -4,7 +4,8 @@ from openai import OpenAI
 from brain_agent import EEGAgent
 from typing import Dict, Any, List, Optional
 import time
-
+import base64
+from vision_agent.vision import AgentCoordinator
 class TopLevelAgent:
     """
     The Top-Level Agent orchestrates the conversation with the OpenAI assistant,
@@ -15,7 +16,7 @@ class TopLevelAgent:
 
     def __init__(
         self,
-        vision_agent,
+        vision_agent = AgentCoordinator,
         eeg_agent = EEGAgent,
         model_name = MODEL_NAME
     ):
@@ -26,7 +27,7 @@ class TopLevelAgent:
         self.eeg_agent_tool_description = eeg_agent_summary
         self.vision_agent_tool_descriptions = vision_agent_summary
         self.eeg_agent = eeg_agent
-        self.image_agent = vision_agent
+        self.vision_agent = vision_agent
 
 
         
@@ -42,10 +43,22 @@ class TopLevelAgent:
 
     def run_analysis(self, eeg_data: Dict[str, Any], image_urls) -> str:
       image_files = []
+      claude_image_files = []
 
       for url in image_urls :
         image_file = self.client.files.create(file = open(url, "rb"), purpose="vision")
         image_files.append(image_file)
+
+        image_content = {
+          "type": "image",
+          "source": {
+              "type": "base64",
+              "media_type": "image/jpeg",
+              "data": base64.standard_b64encode(open(url, 'rb').read()).decode("utf-8")
+          }
+        }
+        claude_image_files.append(image_content)
+
 
       full_msg = [{"type" : "text", "content": jarvis_prompt + f"\n {eeg_data}"}]
 
@@ -81,7 +94,7 @@ class TopLevelAgent:
             tool_output = [{"tool_call_id" : tool.id, "output" : eeg_response}]
 
           elif tool.function.name == "process_images" :
-            image_response = self.vision_agent.process(image_files)
+            image_response = self.vision_agent.process_frame(claude_image_files)
             tool_output = [{"tool_call_id" : tool.id, "output" : image_response}]
 
           else : 

@@ -1,13 +1,26 @@
 from brain_agent import EEGAgent
 import jarvis
+import os
+from vision_agent.vision import AgentCoordinator
 def main():
     # Use absolute path instead of relative
-    import os
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    vision_data_path = os.path.join(current_dir, "vision_agent", "data")
+    vision_data_path = os.path.join(current_dir, "data")
+    valid_extensions = {".jpg", ".jpeg", ".png"}
     
-    agent = EEGAgent("o3-mini-2025-01-31")
-    jarvis_agent = jarvis.TopLevelAgent()
+    image_paths = []
+    for filename in os.listdir(vision_data_path):
+        # Split out the file extension
+        _, ext = os.path.splitext(filename)
+        # Check if the extension is one of the valid ones
+        if ext.lower() in valid_extensions:
+            # Create full path and add it to the list
+            full_path = os.path.join(vision_data_path, filename)
+            image_paths.append(full_path)
+
+    brain_agent = EEGAgent("o3-mini-2025-01-31")
+    vision_agent = AgentCoordinator()
+    jarvis_agent = jarvis.TopLevelAgent(vision_agent=vision_agent, eeg_agent=brain_agent)
     eeg_data = {
         "window_length": 10,
         "sampling_rate": 10,
@@ -21,7 +34,7 @@ def main():
 
     print("Starting EEG Processing \n")
     try:
-        resp = jarvis_agent.run_analysis(eeg_data, [vision_data_path])
+        resp = jarvis_agent.run_analysis(eeg_data, image_paths)
         if resp:
             print("Got Agent Response: ", resp)
         else:

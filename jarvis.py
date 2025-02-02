@@ -122,7 +122,7 @@ class TopLevelAgent:
           response = self.client.beta.threads.messages.retrieve(
              thread_id=self.thread.id,
              message_id=response_id
-          ).content
+          )
 
           break
 

@@ -1,3 +1,5 @@
+// Library by: https://github.com/kitschpatrol/Brain
+
 #include "brain.h"
 #include <wiringSerial.h>
 #include <cstdio>

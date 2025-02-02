@@ -7,12 +7,12 @@ import os
 import requests
 import asyncio
 from dotenv import load_dotenv
-from anthropic import AsyncAnthropic
+from anthropic import Anthropic
 import json
 from abc import ABC, abstractmethod
 
 # Load environment variables from secrets.env
-load_dotenv("../secrets.env")
+load_dotenv(".env")
 
 # Retrieve the API key
 # openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -121,17 +121,17 @@ tool_definition = {
 # print(message)
 
 
-import vision_agent.role as role
+import role
 target_model = "claude-3-5-sonnet-20241022"
 
 
 class base_agent(ABC):
     def __init__(self, system_role, system_query):
-        self.client = AsyncAnthropic(api_key=claude_api_key)
+        self.client = Anthropic(api_key=claude_api_key)
         self.system_role = system_role
         self.system_query = system_query
     
-    async def process_with_claude(self, input_images = None, message = "resolve according to your given role and responsibilities"):
+    def process_with_claude(self, input_images = None, message = "resolve according to your given role and responsibilities"):
         try:
             if message:
                 combined_message = [{"role": "user","content":[{ "type": "text", "text":self.system_query + message}]}]   
@@ -143,7 +143,7 @@ class base_agent(ABC):
 
             print("Calling Claude API from base_agent class")
             
-            response = await self.client.messages.create(
+            response = self.client.messages.create(
                 model=target_model,
                 system=self.system_role,
                 messages= combined_message,
@@ -163,8 +163,8 @@ class ObjectClassifierAgent(base_agent):
         system_query = role.object_classifier_query
         super().__init__(system_prompt, system_query)
         
-    async def process(self, image_data):
-        return await self.process_with_claude(image_data)
+    def process(self, image_data):
+        return  self.process_with_claude(image_data)
     
 class ActionClassifierAgent(base_agent):
     def __init__(self):
@@ -172,8 +172,8 @@ class ActionClassifierAgent(base_agent):
         system_query = role.action_classifier_query
         super().__init__(system_prompt, system_query)
         
-    async def process(self, image_data):
-        return await self.process_with_claude(image_data)
+    def process(self, image_data):
+        return  self.process_with_claude(image_data)
     
 class GoalClassifierAgent(base_agent):
     def __init__(self):
@@ -181,8 +181,8 @@ class GoalClassifierAgent(base_agent):
         system_query = role.goal_classifier_query
         super().__init__(system_prompt, system_query)
         
-    async def process(self, image_data):
-        return await self.process_with_claude(image_data)
+    def process(self, image_data):
+        return  self.process_with_claude(image_data)
 
 class ProgressClassifierAgent(base_agent):
     def __init__(self):
@@ -190,8 +190,8 @@ class ProgressClassifierAgent(base_agent):
         system_query = role.progress_classifier_query
         super().__init__(system_prompt, system_query)
         
-    async def process(self, image_data):
-        return await self.process_with_claude(image_data)
+    def process(self, image_data):
+        return  self.process_with_claude(image_data)
     
 class SenarioClassifierAgent(base_agent):
     def __init__(self):
@@ -201,8 +201,8 @@ class SenarioClassifierAgent(base_agent):
 
         super().__init__(system_prompt, system_query)
         
-    async def process(self, message):
-        return await self.process_with_claude(message=message)
+    def process(self, message):
+        return  self.process_with_claude(message=message)
     
 class SuccessfulClassifierAgent(base_agent):
     def __init__(self):
@@ -212,8 +212,8 @@ class SuccessfulClassifierAgent(base_agent):
 
         super().__init__(system_prompt, system_query)
         
-    async def process(self, message):
-        return await self.process_with_claude(message=message)
+    def process(self, message):
+        return  self.process_with_claude(message=message)
     
 class DistractionClassifierAgent(base_agent):
     def __init__(self):
@@ -223,8 +223,8 @@ class DistractionClassifierAgent(base_agent):
 
         super().__init__(system_prompt, system_query)
         
-    async def process(self, image, message):
-        return await self.process_with_claude(image, message=message)
+    def process(self, image, message):
+        return  self.process_with_claude(image, message=message)
 
 
 
@@ -238,48 +238,49 @@ class AgentCoordinator:
         self.success_classifier = SuccessfulClassifierAgent()
         self.distraction_improvement = DistractionClassifierAgent()
         
-    async def process_frame(self, image_data):
-        """Process a single frame through all agents"""
+    def process_frame(self, image_data):
+        """ a single frame through all agents"""
         try:
             # Level 1: Perception
-            object_output = await self.object_classifier.process(image_data)
-            action_output = await self.action_classifier.process(image_data)
+            object_output =  self.object_classifier.process(image_data)
+            action_output =  self.action_classifier.process(image_data)
             print("Object output", object_output)
             print("Action output", action_output)
             
             # Level 2: Goal Tracking
-            goal_output = await self.goal_classifier.process(image_data)
-            progress_output = await self.progress_classifier.process(image_data)
+            goal_output =  self.goal_classifier.process(image_data)
+            progress_output =  self.progress_classifier.process(image_data)
             print("Goal output", goal_output)
             print("Progress output", progress_output)
             
             # Level 3: Analysis
-            scenario_output = await self.scenario_classifier.process(object_output[0].text + action_output[0].text)
-            success_output = await self.success_classifier.process(goal_output[0].text + progress_output[0].text)
+            scenario_output =  self.scenario_classifier.process(object_output[0].text + action_output[0].text)
+            success_output =  self.success_classifier.process(goal_output[0].text + progress_output[0].text)
             print("Scenario output", scenario_output)
             print("Success output", success_output)
             
             # Level 4: Recommendation
-            improvement_output = await self.distraction_improvement.process(image_data, scenario_output[0].text + success_output[0].text)
+            improvement_output =  self.distraction_improvement.process(image_data, scenario_output[0].text + success_output[0].text)
             print("Improvement output", improvement_output)
             
-            return {
-                "=====object_output=====": object_output[0].text,
-                "=====action_output=====": action_output[0].text,
-                "=====goal_output=====": goal_output[0].text,
-                "=====progress_output=====": progress_output[0].text,
-                "=====scenario_output=====": scenario_output[0].text,
-                "=====success_output=====": success_output[0].text,
-                "=====improvement_output=====": improvement_output[0].text
-            }
+            return improvement_output[0].text
+        # {
+        #         # "=====object_output=====": object_output[0].text,
+        #         # "=====action_output=====": action_output[0].text,
+        #         # "=====goal_output=====": goal_output[0].text,
+        #         # "=====progress_output=====": progress_output[0].text,
+        #         # "=====scenario_output=====": scenario_output[0].text,
+        #         # "=====success_output=====": success_output[0].text,
+        #         "=====improvement_output=====": improvement_output[0].text
+        #     }
             
         except Exception as e:
             print(f"Error in agent pipeline: {str(e)}")
             raise
 
 
-# async def main():
-#     coordinator = AgentCoordinator()
+#def main():
+#     coordinator  AgentCoordinator()
 #     content = []
 #     image_content = {
 #         "type": "image",

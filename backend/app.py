@@ -7,6 +7,7 @@ from PIL import Image
 import base64
 import tools
 import jarvis
+import time
 
 # buffer last 20 samples
 BUFFER_SIZE = 20
@@ -15,55 +16,71 @@ latestBrainData = []
 app = Flask(__name__)
 CORS(app)
 
-# visionAgent = jarvis.AgentCoordinator()
-# eegAgent = jarvis.EEGAgent()
-# topLevelAgent = jarvis.TopLevelAgent(visionAgent, eegAgent)
+visionAgent = jarvis.AgentCoordinator()
+eegAgent = jarvis.EEGAgent()
+topLevelAgent = jarvis.TopLevelAgent(visionAgent, eegAgent)
 
-# def condense(summaries):
-#     condensed = {}
+def condense(summaries):
+    condensed = {}
     
-#     for summary in summaries:
-#         for key, value in summary.items():
-#             if key not in condensed:
-#                 condensed[key] = []  # Initialize an empty list if key doesn't exist
-#             condensed[key].append(value)  # Append the value to the corresponding list
+    for summary in summaries:
+        for key, value in summary.items():
+            if key not in condensed:
+                condensed[key] = []  # Initialize an empty list if key doesn't exist
+            condensed[key].append(value)  # Append the value to the corresponding list
     
-#     return condensed
+    return condensed
 
-# eeg_data = {
-#     "window_length": 10,
-#     "sampling_rate": 10,
-#     "alpha_waves": [23, 45, 67, 54, 32, 71, 49, 50, 19, 30],
-#     "beta_waves": [42, 68, 86, 90, 72, 56, 44, 99, 86, 63],
-#     "gamma_waves": [150, 200, 198, 220, 180, 210, 240, 255, 230, 190],
-#     "delta_waves": [5, 3, 10, 7, 25, 22, 15, 8, 2, 14],
-#     "theta_waves": [10, 20, 35, 40, 25, 45, 30, 38, 12, 27],
-#     "attention_levels": [70, 72, 68, 90, 55, 60, 85, 92, 100, 77]
-# }
+eeg_data = {
+    "window_length": 10,
+    "sampling_rate": 10,
+    "alpha_waves": [23, 45, 67, 54, 32, 71, 49, 50, 19, 30],
+    "beta_waves": [42, 68, 86, 90, 72, 56, 44, 99, 86, 63],
+    "gamma_waves": [150, 200, 198, 220, 180, 210, 240, 255, 230, 190],
+    "delta_waves": [5, 3, 10, 7, 25, 22, 15, 8, 2, 14],
+    "theta_waves": [10, 20, 35, 40, 25, 45, 30, 38, 12, 27],
+    "attention_levels": [70, 72, 68, 90, 55, 60, 85, 92, 100, 77]
+}
 
-# resp = topLevelAgent.run_analysis(eeg_data, ["./output_image_1.jpg", "./output_image_2.jpg"])
-# if resp:
-#     print("Got Agent Response: ", resp)
-# else:
-#     print("Failed to Get Response", resp)
+resp = topLevelAgent.run_analysis(eeg_data, ["./output_image_1.jpg"])
+if resp:
+    print("Got Agent Response: ", resp)
+else:
+    print("Failed to Get Response", resp)
     
 @app.route('/')
 def home():
     return jsonify({"message": "hello, i'm your brain"})
 
 # returns all past messages for a given user
-@app.route('/getPastMessages', methods=['GET'])
+@app.route('/getPastMessages', methods=['POST'])
 def getPastMessages():
     try:
         # Get parameters
-        userID = request.args.get('userID')  # Extract 'userID' from the query parameters
+        conn = sqlite3.connect('database.db')
+        cur = conn.cursor()
 
-        if not userID:
-            return jsonify({"response": "failure", "error": "Missing userID parameter"}), 400
+        data = request.get_json(force=True)
+        userID = data["userID"]
 
-        # SQLITE CODE HERE
-        response = {}
-        return jsonify(response)
+        response = tools.get_all_messages_per_user(userID, cur)
+        return jsonify({"messages": response})
+
+    except Exception as e:
+        return jsonify({"response": "failure", "error": str(e)}), 500
+    
+# returns all log ids for a given user
+@app.route('/getAllLogsPerUser', methods=['POST'])
+def getAllLogsPerUser():
+    try:
+        conn = sqlite3.connect('database.db')
+        cur = conn.cursor()
+
+        data = request.get_json(force=True)
+        userID = data["userID"]
+
+        logsID = tools.get_log_id_per_user(userID, cur)
+        return jsonify({"logsID": logsID})
 
     except Exception as e:
         return jsonify({"response": "failure", "error": str(e)}), 500
@@ -137,6 +154,7 @@ def addNewUser():
             userID = None
         else:
             userID = tools.add_user(username, password, cur)
+            conn.commit()
         # send to database
 
         return jsonify({"userID": userID})
@@ -175,26 +193,58 @@ def tryLogin():
 @app.route('/doesUserExist', methods=['POST'])
 def doesUserExist():
     try:
-        username = request.args.get('username')  # Extract 'userID' from the query parameters
+        conn = sqlite3.connect('database.db')
+        cur = conn.cursor()
+
+        data = request.get_json(force=True)
+        user_id = data["userID"]
 
         # check user in database
-        userExist = False
+        userExist = tools.does_username_already_exist(user_id)
 
         return jsonify({"userExist": userExist})
 
     except Exception as e:
         return jsonify({"response": "failure", "error": str(e)}), 500
     
-# upload new user
+# upload new log
 @app.route('/newLog', methods=['POST'])
 def newLog():
     try:
-        username = request.args.get('username')  # Extract 'userID' from the query parameters
-        timestamp = 100 # need to get this live
+        conn = sqlite3.connect('database.db')
+        cur = conn.cursor()
+
+        data = request.get_json(force=True)
+
+        userID = data["userID"]
 
         # add record to log table
+        logID = tools.add_log(userID, cur)
+        conn.commit()
 
-        return jsonify({"response": "success"})
+        return jsonify({"logID": logID})
+
+    except Exception as e:
+        return jsonify({"response": "failure", "error": str(e)}), 500
+    
+# upload new message
+@app.route('/newMessage', methods=['POST'])
+def newMessage():
+    try:
+        conn = sqlite3.connect('database.db')
+        cur = conn.cursor()
+
+        data = request.get_json(force=True)
+
+        logID = data["logID"]
+        timestamp = int(time.time())
+        content = data["content"]
+
+        # add record to log table
+        messageID = tools.add_message(logID, timestamp, content, cur)
+        conn.commit()
+
+        return jsonify({"messageID": messageID})
 
     except Exception as e:
         return jsonify({"response": "failure", "error": str(e)}), 500

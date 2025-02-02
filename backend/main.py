@@ -1,7 +1,7 @@
 from brain_agent import EEGAgent
 import jarvis
 import os
-from vision_agent.vision import AgentCoordinator
+from vision import AgentCoordinator
 def main():
     # Use absolute path instead of relative
     current_dir = os.path.dirname(os.path.abspath(__file__))

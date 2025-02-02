@@ -286,3 +286,17 @@ def get_all_messages_per_user(user_id, cursor):
         print(f"DatabaseError when retrieving all messages for user {user_id}: {e}")
         raise
 
+
+def get_log_id_per_user(user_id, cursor):
+    try:
+        result = cursor.execute("SELECT log_id FROM log_table WHERE user_id = ?", (user_id,))
+        rows = result.fetchall()
+
+        logs = []
+        for row in rows:
+            logs.append(row[0])
+        return logs
+    
+    except sqlite3.DatabaseError as e:
+        print(f"DatabaseError when retrieving all logs for user {user_id}: {e}")
+        raise

@@ -1,13 +1,13 @@
 import openai
 import os
 from dotenv import load_dotenv
-load_dotenv("secrets.env")
+load_dotenv(".env")
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
     raise ValueError("OpenAI API key not found. Please set it in the .env file.")
 
 openai.api_key = openai_api_key
-MODEL_NAME = "o3-mini-2025-01-31"
+MODEL_NAME = "gpt-4o-2024-08-06"
 
 jarvis_instructions = "YOU ARE A TOP LEVEL LLM AGENT RESPONSIBLE FOR THE FOLLOWING TASK : \
                         - GIVEN A COLLECTION OF IMAGES AND EEG DATA SAMPLES (BRAINWAVE SIGNAL AMPLITUDES) YOU MUST DETECT THE FOLLOWING \
@@ -25,7 +25,28 @@ jarvis_prompt = "HERE IS THE COLLECTED EEG DATA AND ACCOMPANYING IMAGES THAT SHO
                  ANALYZE THEM AND DETERMINE WHAT, IF ANYTHING, HAS DISTRACTED THE USER IN THIS TIME FRAME  - REMEMBER TO ADHERE TO YOUR INSTRUCTIONS: "
 
 
-vision_agent_summary = {"name" : "process_images"}
+vision_agent_summary = {
+   "name" : "process_images",
+   "description": (
+       "A multi-layer visual analysis system that processes images from the user's perspective "
+       "to understand their work environment, activities, and productivity patterns. "
+       "The system consists of several specialized sub-agents that work together to provide "
+       "comprehensive analysis and recommendations."
+   ),
+   "parameters": {
+       "type": "object",
+       "properties": {
+           "image_data": {
+               "type": "array",
+               "description": (
+                   "array of image paths taken from user's field of view containing:\n"
+               ),
+                'required':['image_data'],
+               },
+           },
+       },
+}
+
 eeg_agent_summary =  {
     "name": "process_eeg_data",
     "description": (
@@ -112,7 +133,8 @@ eeg_agent_summary =  {
                     }
                 },
                 "required": ["eeg_data"]
- }}
+             }
+        }
 
 brain_agent_instructions = "You are an expert in neuroscience and behavioral analysis.\
                             Your Goal is to analyze the EEG data sampled over a window interval. \

@@ -186,7 +186,7 @@ export default function Home() {
                     <ul className="text-end">
                       <li className="px-4 py-2 mb-0.5 text-sm cursor-default text-gray-500">{username}</li>
                       <li className="px-4 py-2 hover:bg-gray-200 cursor-pointer">
-                        <Link href={`./history`} className="w-full h-full">
+                        <Link href={`/history?userId=${userId}`} className="w-full h-full">
                           History
                         </Link>
                       </li>

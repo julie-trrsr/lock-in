@@ -6,6 +6,7 @@ from typing import Dict, Any, List, Optional
 import time
 import base64
 from vision_agent.vision import AgentCoordinator
+
 class TopLevelAgent:
     """
     The Top-Level Agent orchestrates the conversation with the OpenAI assistant,

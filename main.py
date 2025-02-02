@@ -33,14 +33,12 @@ def main():
     }
 
     print("Starting EEG Processing \n")
-    try:
-        resp = jarvis_agent.run_analysis(eeg_data, image_paths)
-        if resp:
-            print("Got Agent Response: ", resp)
-        else:
-            print("Failed to Get Response")
-    except Exception as e:
-        print(f"Error occurred: {str(e)}")
+    resp = jarvis_agent.run_analysis(eeg_data, image_paths)
+    if resp:
+        print("Got Agent Response: ", resp)
+    else:
+        print("Failed to Get Response", resp)
+
 
 if __name__ == "__main__":
     main()

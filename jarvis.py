@@ -60,8 +60,8 @@ class TopLevelAgent:
         }
         claude_image_files.append(image_content)
 
-
-      full_msg = [{"type" : "text", "content": jarvis_prompt + f"\n {eeg_data}"}]
+      full_prompt = jarvis_prompt + f" {eeg_data}"
+      full_msg = [{"type" : "text", "content": full_prompt}]
 
       for image in image_files : 
         full_msg.append({
@@ -73,7 +73,7 @@ class TopLevelAgent:
       self.client.beta.threads.messages.create(
          thread_id = self.thread.id,
          role = "user",
-         content = full_msg
+         content = jarvis_prompt
       )
 
       run = self.client.beta.threads.runs.create_and_poll(

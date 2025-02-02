@@ -5,7 +5,7 @@ import sqlite3
 import io
 from PIL import Image
 import base64
-import db_tools
+import database.tools as db_tools
 
 # buffer last 20 samples
 BUFFER_SIZE = 20
@@ -13,8 +13,6 @@ latestBrainData = []
 
 app = Flask(__name__)
 CORS(app)
-
-
 
 
 @app.route('/')
@@ -31,11 +29,28 @@ def getPastMessages():
         if not userID:
             return jsonify({"response": "failure", "error": "Missing userID parameter"}), 400
 
-
-        # SQLITE CODE HERE
-        response = {}
+        response = db_tools.get_all_messages_per_user(userID)
         return jsonify(response)
 
+    except Exception as e:
+        return jsonify({"response": "failure", "error": str(e)}), 500
+    
+# returns all logs id for a given user
+@app.route('/getLogsForUser', methods=['GET'])
+def getLogsForUser():
+    try:
+        conn = sqlite3.connect('database.db')
+        cur = conn.cursor()
+
+        # Get parameters
+        userID = request.args.get('userID')
+
+        if not userID:
+            return jsonify({"response": "failure", "error": "Missing userID parameter"}), 400
+
+        response = db_tools.get_log_id_per_user(userID, cur)
+        return jsonify(response)
+    
     except Exception as e:
         return jsonify({"response": "failure", "error": str(e)}), 500
 

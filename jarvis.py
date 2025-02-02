@@ -80,7 +80,7 @@ class TopLevelAgent:
          thread_id = self.thread.id,
          assistant_id=self.assistant.id,
          tool_choice = "required",
-         tool = [{"type":"function", "function" : self.eeg_agent_tool_description}, {"type":"function", "function" : self.vision_agent_tool_descriptions}]
+         tools = [{"type":"function", "function" : self.eeg_agent_tool_description}, {"type":"function", "function" : self.vision_agent_tool_descriptions}]
       )
 
       response = None

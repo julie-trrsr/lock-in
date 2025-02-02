@@ -1,13 +1,13 @@
 import openai
 import os
 from dotenv import load_dotenv
-load_dotenv("secrets.env")
+load_dotenv(".env")
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
     raise ValueError("OpenAI API key not found. Please set it in the .env file.")
 
 openai.api_key = openai_api_key
-MODEL_NAME = "o3-mini-2025-01-31"
+MODEL_NAME = "gpt-4o-2024-08-06"
 
 jarvis_instructions = "YOU ARE A TOP LEVEL LLM AGENT RESPONSIBLE FOR THE FOLLOWING TASK : \
                         - GIVEN A COLLECTION OF IMAGES AND EEG DATA SAMPLES (BRAINWAVE SIGNAL AMPLITUDES) YOU MUST DETECT THE FOLLOWING \
@@ -37,100 +37,16 @@ vision_agent_summary = {
        "type": "object",
        "properties": {
            "image_data": {
-               "type": "object",
+               "type": "array",
                "description": (
-                   "Real-time image data from user's field of view containing:\n"
-                   " - image_path: Path to the image file\n"
-                   " - timestamp: When the image was captured\n"
-                   " - resolution: Image dimensions\n"
+                   "array of image paths taken from user's field of view containing:\n"
                ),
-               "properties": {
-                   "perception_layer": {
-                       "type": "object",
-                       "description": "First layer analysis of visual data",
-                       "properties": {
-                           "objects": {
-                               "type": "array",
-                               "description": "Detected objects in view",
-                               "items": {
-                                   "type": "object",
-                                   "properties": {
-                                       "type": {"type": "string"},
-                                       "confidence": {"type": "number"},
-                                       "location": {
-                                           "type": "object",
-                                           "properties": {
-                                               "x": {"type": "number"},
-                                               "y": {"type": "number"},
-                                               "w": {"type": "number"},
-                                               "h": {"type": "number"}
-                                           }
-                                       },
-                                       "relevance": {"type": "number"}
-                                   }
-                               }
-                           },
-                           "actions": {
-                               "type": "array",
-                               "description": "Detected user activities",
-                               "items": {
-                                   "type": "object",
-                                   "properties": {
-                                       "type": {"type": "string"},
-                                       "confidence": {"type": "number"},
-                                       "duration": {"type": "number"},
-                                       "intensity": {"type": "number"}
-                                   }
-                               }
-                           }
-                       }
-                   },
-                   "goal_tracking": {
-                       "type": "object",
-                       "description": "Analysis of progress and goal alignment",
-                       "properties": {
-                           "goal_alignment": {"type": "number"},
-                           "active_goals": {"type": "array", "items": {"type": "string"}},
-                           "progress_score": {"type": "number"},
-                           "velocity": {"type": "number"},
-                           "bottlenecks": {"type": "array", "items": {"type": "string"}}
-                       }
-                   },
-                   "scenario_analysis": {
-                       "type": "object",
-                       "description": "High-level situation understanding",
-                       "properties": {
-                           "scenario_type": {"type": "string"},
-                           "context": {"type": "string"},
-                           "success_score": {"type": "number"},
-                           "trajectory": {"type": "string"}
-                       }
-                   },
-                   "recommendations": {
-                       "type": "object",
-                       "description": "Actionable improvement suggestions",
-                       "properties": {
-                           "suggestion": {"type": "string"},
-                           "priority": {"type": "number"},
-                           "expected_impact": {"type": "number"},
-                           "implementation_ease": {"type": "number"}
-                       }
-                   }
+                'required':['image_data'],
                },
-               "required": [
-                   "image_path",
-                   "timestamp",
-                   "resolution",
-                   "perception_layer",
-                   "goal_tracking",
-                   "scenario_analysis",
-                   "recommendations"
-               ]
-           }
+           },
        },
-       "required": ["image_data"]
-   }
 }
+
 eeg_agent_summary =  {
     "name": "process_eeg_data",
     "description": (
@@ -217,7 +133,8 @@ eeg_agent_summary =  {
                     }
                 },
                 "required": ["eeg_data"]
- }}
+             }
+        }
 
 brain_agent_instructions = "You are an expert in neuroscience and behavioral analysis.\
                             Your Goal is to analyze the EEG data sampled over a window interval. \

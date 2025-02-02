@@ -5,7 +5,7 @@ from brain_agent import EEGAgent
 from typing import Dict, Any, List, Optional
 import time
 import base64
-from vision_agent.vision import AgentCoordinator
+from vision import AgentCoordinator
 
 class TopLevelAgent:
     """
@@ -35,7 +35,7 @@ class TopLevelAgent:
         self.assistant = self.client.beta.assistants.create(
           name = "Jarivs",
           instructions = self.instructions,
-          tools=[{"type":"function", "function":self.eeg_agent_tool_description}],
+          tools=[{"type":"function", "function":self.eeg_agent_tool_description}, {"type" : "function", "function":self.vision_agent_tool_descriptions}],
           model = self.model_name
         )
 
@@ -80,32 +80,32 @@ class TopLevelAgent:
          thread_id = self.thread.id,
          assistant_id=self.assistant.id,
          tool_choice = "required",
-         tool = [{"type":"function", "function" : self.eeg_agent_tool_description}, {"type":"function", "function" : self.vision_agent_tool_descriptions}]
+         tools = [{"type":"function", "function" : self.eeg_agent_tool_description}, {"type":"function", "function" : self.vision_agent_tool_descriptions}]
       )
 
       response = None
       while True : 
          
         if run.status == "requires_action" :
-          tool = run.required_action.submit_tool_outputs.tool_calls[0]
-          tool_output = None
+          for tool in run.required_action.submit_tool_outputs.tool_calls:
+            tool_output = []
 
-          if tool.function.name == "process_eeg_data" :
-            eeg_response = self.eeg_agent.process_eeg_data(eeg_data)
-            tool_output = [{"tool_call_id" : tool.id, "output" : eeg_response}]
+            if tool.function.name == "process_eeg_data" :
+              eeg_response = self.eeg_agent.process_eeg_data(eeg_data)
+              tool_output.append({"tool_call_id" : tool.id, "output" : eeg_response})
 
-          elif tool.function.name == "process_images" :
-            image_response = self.vision_agent.process_frame(claude_image_files)
-            tool_output = [{"tool_call_id" : tool.id, "output" : image_response}]
+            elif tool.function.name == "process_images" :
+              image_response = self.vision_agent.process_frame(claude_image_files)
+              tool_output.append({"tool_call_id" : tool.id, "output" : image_response})
 
-          else : 
-            error_msg = {"error": f"Unknown function '{tool.function.name}'."}
-            self.client.beta.threads.messages.create(
-              thread_id=self.thread.id,
-              role="function",
-              name=tool.function.name,
-              content=json.dumps(error_msg)
-            )
+            else : 
+              error_msg = {"error": f"Unknown function '{tool.function.name}'."}
+              self.client.beta.threads.messages.create(
+                thread_id=self.thread.id,
+                role="function",
+                name=tool.function.name,
+                content=json.dumps(error_msg)
+              )
 
           if tool_output : 
             run = self.client.beta.threads.runs.submit_tool_outputs_and_poll(

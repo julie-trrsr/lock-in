@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import React from "react";
 import { Login } from "@/components/Login";
 import { Message } from "@/components/Message";
+import { error } from "console";
 
 export default function Home() {
   const [lockedIn, setLockedIn] = useState(false);
@@ -14,14 +15,44 @@ export default function Home() {
   const [openLogin, setOpenLogin] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [incorrectPassword, setIncorrectPassword] = useState(false);
+  const [userAlreadyExists, setUserAlreadyExists] = useState(false);
 
 
-  const handleSignUp = () => {
-    setOpenLogin(false);
+  const handleSignUp = async () => {
+    const userID = await fetch('http://IP:5000/addNewUser', {
+      method: 'POST', 
+      headers: {"Accept": "application/json" },
+      body: JSON.stringify({ username:username, password:password })
+    }) 
+        .then(response => response.json())
+        .then(data => { return data.userID; });
+    if (userID == null) {
+      setUserAlreadyExists(true);
+      setUsername("");
+    } else {
+      setUserId(userID);
+      setPassword("");
+      setOpenLogin(false);
+    }
   }
 
-  const handleSubmit = () => {
-    setOpenLogin(false);
+  const handleSubmit = async () => {
+    const userID = await fetch(`http://172.20.10.11:5000/tryLogin`, {
+      method: 'POST', 
+      headers: {"Accept": "application/json" },
+      body: JSON.stringify({ username:username, password:password })
+    }) 
+        .then(response => response.json())
+        .then(data => { return data.userID; });
+    if (userID == null) {
+      setPassword("");
+      setIncorrectPassword(true);
+    } else {
+      setUserId(userID as string);
+      setPassword("");
+      setOpenLogin(false);
+    }
   }
 
   const handleUnlockClick = () => {
@@ -34,8 +65,8 @@ export default function Home() {
 
   return (
     <div className="relative flex flex-col items-center justify-center justify-items-center min-h-screen p-8 sm:p-20">
-      <div className="absolute top-0 right-0 rounded-full hover:bg-neutral-300 hover:cursor-pointer mt-4 mr-4">
-        <Login isOpen={openLogin} onClose={() => setOpenLogin(false)}>
+      <div className="absolute top-0 right-0 rounded-full hover:bg-neutral-300 mt-4 mr-4">
+        <Login isOpen={openLogin} onClose={() => { setUsername(""); setPassword(""); setIncorrectPassword(false); setUserAlreadyExists(false); setOpenLogin(false); } }>
           <div className="flex flex-col">
             <label
               htmlFor="username"
@@ -46,7 +77,7 @@ export default function Home() {
                 id="username"
                 className="w-full p-1 border border-slate-300 rounded-md resize-none text-base focus:ring-2 focus:ring-inherit focus:border-inherit focus:outline-none"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => { setIncorrectPassword(false); setUserAlreadyExists(false); setUsername(e.target.value); }}
                 required={true}
               />
             </label>
@@ -59,11 +90,21 @@ export default function Home() {
                 id="password"
                 className="w-full p-1 border border-slate-300 rounded-md resize-none text-base focus:ring-2 focus:ring-inherit focus:border-inherit focus:outline-none"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setIncorrectPassword(false); setUserAlreadyExists(false); setPassword(e.target.value); }}
                 required={true}
                 type="password"
               />
             </label>
+            {incorrectPassword && (
+              <p className="text-md text-red-600 text-left">
+                Incorrect username or password, please try again.
+              </p>
+            )}
+            {userAlreadyExists && (
+              <p className="text-md text-red-600 text-left">
+                Username already taken, please try again.
+              </p>
+            )}
             <div className="flex w-full justify-center items-center mb-2 mt-3">
               <div className="w-full text-white text-center text-lg font-medium p-1 px-4 bg-blue-400 hover:bg-blue-500 rounded-xl hover:cursor-pointer" onClick={handleSubmit}>
                 Enter
@@ -77,12 +118,15 @@ export default function Home() {
           </div>
         </Login>
         {userId == "" ? (
-          <FaUser className="w-12 h-12 p-2 text-black"
+          <FaUser className="w-12 h-12 p-2 text-black hover:cursor-pointer"
                   title="Log in"
                   onClick={() => setOpenLogin(true)}/>
-        ): (
-          <>
-          </>
+        ) : (
+          <div className="flex w-12 h-12 bg-black rounded-full justify-center items-center hover:cursor-default">
+            <p className="text-xl text-white text-center p-2">
+              {username.charAt(0).toUpperCase()}
+            </p>
+          </div>
         )}
       </div>
       {!lockedIn && !animating ? (

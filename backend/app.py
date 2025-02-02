@@ -184,13 +184,34 @@ def newLog():
         data = request.get_json(force=True)
 
         userID = data["userID"]
-        timestamp = int(time.time())
 
         # add record to log table
         logID = tools.add_log(userID, cur)
         conn.commit()
 
         return jsonify({"logID": logID})
+
+    except Exception as e:
+        return jsonify({"response": "failure", "error": str(e)}), 500
+    
+# upload new message
+@app.route('/newMessage', methods=['POST'])
+def newMessage():
+    try:
+        conn = sqlite3.connect('database.db')
+        cur = conn.cursor()
+
+        data = request.get_json(force=True)
+
+        logID = data["logID"]
+        timestamp = int(time.time())
+        content = data["content"]
+
+        # add record to log table
+        messageID = tools.add_message(logID, timestamp, content, cur)
+        conn.commit()
+
+        return jsonify({"messageID": messageID})
 
     except Exception as e:
         return jsonify({"response": "failure", "error": str(e)}), 500

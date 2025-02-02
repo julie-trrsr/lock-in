@@ -6,13 +6,14 @@ import { motion } from "framer-motion";
 import React from "react";
 import { Login } from "@/components/Login";
 import { Message } from "@/components/Message";
-import { error } from "console";
+
 
 export default function Home() {
   const [lockedIn, setLockedIn] = useState(false);
   const [animating, setAnimating] = useState(false);
   const [userId, setUserId] = useState("a");
   const [openLogin, setOpenLogin] = useState(false);
+  const [openUserModal, setOpenUserModal] = useState(false);
   const [username, setUsername] = useState("maria");
   const [password, setPassword] = useState("");
   const [incorrectPassword, setIncorrectPassword] = useState(false);
@@ -20,7 +21,7 @@ export default function Home() {
 
 
   const handleSignUp = async () => {
-    const userID = await fetch('http://IP:5000/addNewUser', {
+    const userID = await fetch('http://172.20.10.11:5000/addNewUser', {
       method: 'POST', 
       headers: {"Accept": "application/json" },
       body: JSON.stringify({ username:username, password:password })
@@ -67,7 +68,7 @@ export default function Home() {
     <div className="relative flex flex-col items-center justify-center justify-items-center min-h-screen p-8 sm:p-20">
       {!lockedIn && !animating ? (
         <>
-          <div className="absolute top-0 right-0 rounded-full hover:bg-neutral-300 mt-4 mr-4">
+          <div className="absolute top-0 right-0 rounded-full mt-4 mr-4">
             <Login isOpen={openLogin} onClose={() => { setUsername(""); setPassword(""); setIncorrectPassword(false); setUserAlreadyExists(false); setOpenLogin(false); } }>
               <div className="flex flex-col">
                 <label
@@ -83,9 +84,14 @@ export default function Home() {
                     required={true}
                   />
                 </label>
+                {userAlreadyExists && (
+                  <p className="text-md text-red-600 text-left">
+                    Username already taken, please try again.
+                  </p>
+                )}
                 <label
                   htmlFor="password"
-                  className="text-left block mb-3 text-lg font-medium text-slate-800"
+                  className="text-left block mb-3 mt-3 text-lg font-medium text-slate-800"
                 >
                   Password:
                   <input
@@ -102,11 +108,6 @@ export default function Home() {
                     Incorrect username or password, please try again.
                   </p>
                 )}
-                {userAlreadyExists && (
-                  <p className="text-md text-red-600 text-left">
-                    Username already taken, please try again.
-                  </p>
-                )}
                 <div className="flex w-full justify-center items-center mb-2 mt-3">
                   <div className="w-full text-white text-center text-lg font-medium p-1 px-4 bg-blue-400 hover:bg-blue-500 rounded-xl hover:cursor-pointer" onClick={handleSubmit}>
                     Enter
@@ -120,14 +121,33 @@ export default function Home() {
               </div>
             </Login>
             {userId == "" ? (
-              <FaUser className="w-12 h-12 p-2 text-black hover:cursor-pointer"
+              <FaUser className="hover:bg-neutral-300 rounded-full w-12 h-12 p-2 text-black hover:cursor-pointer"
                       title="Log in"
                       onClick={() => setOpenLogin(true)}/>
             ) : (
-              <div className="flex w-12 h-12 bg-black rounded-full justify-center items-center hover:cursor-default">
-                <p className="text-xl text-white text-center p-2">
-                  {username.charAt(0).toUpperCase()}
-                </p>
+              <div  className="flex flex-col items-end"
+                    onMouseEnter={() => setOpenUserModal(true)} 
+                    onMouseLeave={() => setOpenUserModal(false)}>
+                <div className="flex w-12 h-12 bg-black rounded-full justify-center items-center hover:cursor-default">
+                  <p className="text-xl text-white text-center p-2">
+                    {username.charAt(0).toUpperCase()}
+                  </p>
+                </div>
+                {openUserModal && (
+                  <div className="mt-2 w-28  rounded-xl shadow-lg z-50">
+                    <ul className="text-end">
+                      <li className="px-4 py-2 mb-0.5 text-sm cursor-default text-gray-500">{username}</li>
+                      <li className="px-4 py-2 hover:bg-gray-200 cursor-pointer">History</li>
+                      <li className="px-4 py-2 hover:bg-gray-200 cursor-pointer" onClick={() => { 
+                        setUserId("");
+                        setUsername("");
+                        setPassword("");
+                        setUserAlreadyExists(false);
+                        setIncorrectPassword(false); 
+                        }}>Log out</li>
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -166,7 +186,7 @@ export default function Home() {
         <>
           {userId != "" && (
             <div className="absolute top-0 right-0 rounded-full hover:bg-neutral-300 mt-4 mr-4">
-              <div className="flex w-12 h-12 bg-black rounded-full justify-center items-center hover:cursor-default">
+              <div className="flex w-12 h-12 bg-gray-400 rounded-full justify-center items-center hover:cursor-default">
                 <p className="text-xl text-white text-center p-2">
                   {username.charAt(0).toUpperCase()}
                 </p>

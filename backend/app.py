@@ -5,7 +5,7 @@ import sqlite3
 import io
 from PIL import Image
 import base64
-import db_tools
+import tools
 
 # buffer last 20 samples
 BUFFER_SIZE = 20
@@ -13,9 +13,6 @@ latestBrainData = []
 
 app = Flask(__name__)
 CORS(app)
-
-
-
 
 @app.route('/')
 def home():
@@ -55,7 +52,7 @@ def uploadImage():
     image_file_1 = request.files['current_image']
     image_file_2 = request.files['past_image']
     image_blob_1 = image_file_1.read()  # Read the binary data of the image
-    image_blob_2 = image_file_1.read()  # Read the binary data of the image
+    image_blob_2 = image_file_2.read()  # Read the binary data of the image
 
     with open("output_image_1.jpg", "wb") as f:
         f.write(image_blob_1)
@@ -102,12 +99,12 @@ def addNewUser():
         print(username)
         print(password)
 
-        doesExist = db_tools.does_username_already_exist(username, cur)
+        doesExist = tools.does_username_already_exist(username, cur)
         print(doesExist)
         if doesExist:
             userID = None
         else:
-            userID = db_tools.add_user(username, password, cur)
+            userID = tools.add_user(username, password, cur)
         # send to database
 
         return jsonify({"userID": userID})
@@ -127,7 +124,7 @@ def tryLogin():
         username_try = data["username"]
         password_try = data["password"]
 
-        user_info = db_tools.get_user_infos_from_username(username_try, cur)
+        user_info = tools.get_user_infos_from_username(username_try, cur)
         print(user_info)
         user_id = user_info[0]
         password_real = user_info[1]

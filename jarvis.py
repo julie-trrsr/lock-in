@@ -1,4 +1,3 @@
-import openai
 import json
 from system_prompt import *
 from openai import OpenAI
@@ -16,17 +15,21 @@ class TopLevelAgent:
 
     def __init__(
         self,
+        vision_agent,
         eeg_agent = EEGAgent,
         model_name = MODEL_NAME
     ):
+        self.model_name = model_name
         
         self.client = OpenAI()
         self.instructions = jarvis_instructions
-        self.model_name = model_name
-        self.eeg_agent = eeg_agent
         self.eeg_agent_tool_description = eeg_agent_summary
         self.vision_agent_tool_descriptions = vision_agent_summary
+        self.eeg_agent = eeg_agent
+        self.image_agent = vision_agent
 
+
+        
         self.assistant = self.client.beta.assistants.create(
           name = "Jarivs",
           instructions = self.instructions,
@@ -78,7 +81,8 @@ class TopLevelAgent:
             tool_output = [{"tool_call_id" : tool.id, "output" : eeg_response}]
 
           elif tool.function.name == "process_images" :
-            image_response = self.vision_agent.process()
+            image_response = self.vision_agent.process(image_files)
+            tool_output = [{"tool_call_id" : tool.id, "output" : image_response}]
 
           else : 
             error_msg = {"error": f"Unknown function '{tool.function.name}'."}
@@ -99,11 +103,12 @@ class TopLevelAgent:
         elif run.status == "completed" :
           response_id = self.client.beta.threads.messages.list(
             thread_id=self.thread.id
-          ).last_id
+          ).first_id
 
-          response = self.client.beta.threads.messages.list(
-             thread_id=self.thread.id
-          )
+          response = self.client.beta.threads.messages.retrieve(
+             thread_id=self.thread.id,
+             message_id=response_id
+          ).content[0].text.value
 
           break
 

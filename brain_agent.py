@@ -1,27 +1,9 @@
 import json
 import math
-import openai
 from typing import List, Dict, Any
 from openai import OpenAI
-import os
 import time
-from dotenv import load_dotenv
-# Load variables from the .env file
-load_dotenv()
-
-# Retrieve the OpenAI API key
-openai_api_key = os.getenv("OPENAI_API_KEY")
-if not openai_api_key:
-    raise ValueError("OpenAI API key not found. Please set it in the .env file.")
-
-
-openai.api_key = openai_api_key
-MODEL_NAME = "4o"
-brain_agent_instructions = "You are an expert in neuroscience and behavioral analysis.\
-                            Your Goal is to analyze the EEG data sampled over a window interval. \
-                            In your analysis you must describe the behaviour of the users brainwaves \
-                            and provide an insightful hypothesis on what state the user is in (ie. focused, relaxed, attentive, losing attention)"
-
+from system_prompt import *
 
 class EEGAgent:
     """
@@ -37,9 +19,7 @@ class EEGAgent:
         self.eeg_tool = self.get_function_schema()
 
         # Summaries stored for references (if needed)
-        self.tool_summaries = {"get_eeg_summary": self.eeg_tool}
-        self.analyse_eeg_prompt = "Here is the EEG data sampled, it contains the values of different brainwave frequencies. \
-                                  Please tell me what patterns you see and what is the overall trend of my brainwaves"
+        self.analyse_eeg_prompt = brain_agent_prompt
         self.instructions = brain_agent_instructions
 
         # Initialize the OpenAI client
@@ -49,7 +29,7 @@ class EEGAgent:
         self.assistant = self.client.beta.assistants.create(
             name="EEG Data Analyst",
             instructions=self.instructions,
-            tools=[{"type": "function", "function": self.eeg_tool}],  # Now including the function schema
+            tools=[{"type": "function", "function": self.eeg_tool}], 
             model=self.model_name
         )
 
@@ -127,11 +107,12 @@ class EEGAgent:
 
           response_id = self.client.beta.threads.messages.list(
             thread_id=self.thread.id
-          ).last_id
+          ).first_id
 
-          response = self.client.beta.threads.messages.list(
-             thread_id=self.thread.id
-          )
+          response = self.client.beta.threads.messages.retrieve(
+             thread_id=self.thread.id,
+             message_id=response_id
+          ).content[0].text.value
 
           break
 
@@ -305,6 +286,7 @@ class EEGAgent:
                                 "items": {"type": "number"}
                             },
                         },
+                        "additionalProperties":False,
                         "required": [
                             "window_length",
                             "sampling_rate",
@@ -314,9 +296,11 @@ class EEGAgent:
                             "delta_waves",
                             "theta_waves",
                             "attention_levels"
-                        ]
-                    }
+                        ],
+                    },
                 },
-                "required": ["eeg_data"]
-            }
+              "additionalProperties" : False,
+              "required": ["eeg_data"],
+            },
+            "strict" : True,
         }

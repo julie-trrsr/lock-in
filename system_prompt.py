@@ -1,13 +1,27 @@
+import openai
+import os
+from dotenv import load_dotenv
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if not openai_api_key:
+    raise ValueError("OpenAI API key not found. Please set it in the .env file.")
+
+openai.api_key = openai_api_key
 MODEL_NAME = "o3-mini-2025-01-31"
 
 jarvis_instructions = "YOU ARE A TOP LEVEL LLM AGENT RESPONSIBLE FOR THE FOLLOWING TASK : \
                         - GIVEN A COLLECTION OF IMAGES AND EEG DATA SAMPLES (BRAINWAVE SIGNAL AMPLITUDES) YOU MUST DETECT THE FOLLOWING \
                           1. THE MOMENT THE USER HAS LOST THEIR ATTENTIVENESS AND MOMEMNTS LEADING UP TO IT \
                           2. WHAT IN THE ENVIRONMENT/SURROUNDING HAS CAUSED THE USER TO LOSE THEIR ATTENTIVENESS \
-                        YOU MUST THEN PROVIDE A DETAILED REPORT THAT EXPLAINS WHAT HAPPENED, IF THE USER HAS LOST THEIR ATTENTION IN THE GIVEN PERIOD AND MOST IMPORTANTLY YOU MUST PROVIDE A SUGGESTION ON WHAT THE USER SHOULD DO WITH THEIR ENVIRONMENT OR ELSEWISE IN ORDER TO REGAIN THEIR ATTENTION"
+                        \
+                        YOU MUST THEN PROVIDE A DETAILED REPORT THAT EXPLAINS WHAT HAPPENED, IF THE USER HAS LOST THEIR ATTENTION IN THE GIVEN PERIOD AND MOST IMPORTANTLY YOU MUST PROVIDE A SUGGESTION ON WHAT THE USER SHOULD DO WITH THEIR ENVIRONMENT OR ELSEWISE IN ORDER TO REGAIN THEIR ATTENTION \
+                        YOUR RESPONSE MUST NOT INCLUDE ANY MARKDOWN DECORATIONS SUCH AS '#', '**', etc \
+                        YOUR RESPONSE MUST ADHERE TO THE FOLLOWING JSON FORMAT AT ALL TIMES : \
+                              user_distracted : ['HAS THE USER GOTTEN DISTRACTED (YES OR NO)'], \
+                              distraction_analysis : ['POSSIBLE REASONS FOR DISTRACTION'], \
+                              advice_for_user : ['WHAT TO DO TO IMPROVE CURRENT ATTENTION'],"
 
 jarvis_prompt = "HERE IS THE COLLECTED EEG DATA AND ACCOMPANYING IMAGES THAT SHOW THE USERS SURROUNDING WHILE THE EEG DATA HAS BEEN GATHERED \
-                 ANALYZE THEM AND DETERMINE WHAT, IF ANYTHING, HAS DISTRACTED THE USER IN THIS TIME FRAME : "
+                 ANALYZE THEM AND DETERMINE WHAT, IF ANYTHING, HAS DISTRACTED THE USER IN THIS TIME FRAME  - REMEMBER TO ADHERE TO YOUR INSTRUCTIONS: "
 
 
 vision_agent_summary = {"name" : "process_images"}
@@ -15,7 +29,13 @@ eeg_agent_summary =  {
     "name": "process_eeg_data",
     "description": (
       "The EEG data is passed to an LLM agent that will process and analyze this data"
-      "The LLM agent will then respond with a descriptive analysis of the brainwaves."
+      "The LLM agent will then respond with a descriptive analysis of the brainwaves in a JSON Format as follows : \
+                             alpha_wave_analysis : ['ANALYSIS OF ALPHA WAVES'], \
+                              beta_wave_analysis : ['ANALYSIS OF BETA WAVES'], \
+                              gamma_wave_analysis : ['ANALYSIS OF GAMMA WAVES'], \
+                              delta_wave_analysis : ['ANALYSIS OF GAMMA WAVES'], \
+                              attention_analysis : ['ANALYSIS OF ATTENTION VALUES']"
+
       "This analysis provides insight into the behaviour, trend and patterns in the users brainwaves over a given sampling window"
       "Use this to get a better understanding about what the state of the User's attentiveness and brainwaves"
     ),
@@ -92,3 +112,20 @@ eeg_agent_summary =  {
                 },
                 "required": ["eeg_data"]
  }}
+
+brain_agent_instructions = "You are an expert in neuroscience and behavioral analysis.\
+                            Your Goal is to analyze the EEG data sampled over a window interval. \
+                            In your analysis you must describe the behaviour of the users brainwaves \
+                            and provide an insightful hypothesis on what state the user is in (ie. focused, relaxed, attentive, losing attention). \
+                            You must follow the following output format guidelines at ALL times \
+                            1. Your response must not include any markdown decorations such as '#', '**', etc\
+                            2. You must provide your response in the following JSON format : \
+                            \
+                              alpha_wave_analysis : ['YOUR ANALYSIS OF ALPHA WAVES'], \
+                              beta_wave_analysis : ['YOUR ANALYSIS OF BETA WAVES'], \
+                              gamma_wave_analysis : ['YOUR ANALYSIS OF GAMMA WAVES'], \
+                              delta_wave_analysis : ['YOUR ANALYSIS OF GAMMA WAVES'], \
+                              attention_analysis : ['YOUR ANALYSIS OF ATTENTION VALUES'],"
+
+brain_agent_prompt = "Here is the EEG data sampled, it contains the values of different brainwave frequencies. \
+                    Please tell me what patterns you see and what is the overall trend of my brainwaves"

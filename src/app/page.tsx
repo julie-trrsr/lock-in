@@ -24,10 +24,10 @@ ChartJS.register(
 export default function Home() {
   const [lockedIn, setLockedIn] = useState(false);
   const [animating, setAnimating] = useState(false);
-  const [userId, setUserId] = useState("a");
+  const [userId, setUserId] = useState("");
   const [openLogin, setOpenLogin] = useState(false);
   const [openUserModal, setOpenUserModal] = useState(false);
-  const [username, setUsername] = useState("maria");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [incorrectPassword, setIncorrectPassword] = useState(false);
   const [userAlreadyExists, setUserAlreadyExists] = useState(false);
@@ -89,20 +89,20 @@ export default function Home() {
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        await fetch(`http://172.20.10.11:5000/getLatestBrainData`, {
+        const data = await fetch(`http://172.20.10.11:5000/getLatestBrainData`, {
           method: 'GET', 
           headers: {"Accept": "application/json" },
         }) 
             .then(response => response.json())
-            .then(data => {
-              setBarData({
-                labels:labels,
-                datasets: [{
-                  data: [data.delta, data.theta, data.low_alpha, data.low_beta]
-                }]
-              });
-              setHeadsetOn(data.signal_strength !== 200);
-            });
+            .then(data => { return JSON.parse(data as string); });
+              
+        setBarData({
+          labels:labels,
+          datasets: [{
+            data: [data.delta as number, data.theta as number, data.low_alpha as number, data.low_beta as number]
+          }]
+        });
+        setHeadsetOn((data.signal_strength as number) !== 200);
       } catch (error) {
         console.error("Error fetching next signal:", error);
       }

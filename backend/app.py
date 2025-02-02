@@ -28,7 +28,6 @@ def getPastMessages():
         if not userID:
             return jsonify({"response": "failure", "error": "Missing userID parameter"}), 400
 
-
         # SQLITE CODE HERE
         response = {}
         return jsonify(response)
@@ -54,10 +53,10 @@ def uploadImage():
     image_blob_1 = image_file_1.read()  # Read the binary data of the image
     image_blob_2 = image_file_2.read()  # Read the binary data of the image
 
-    with open("output_image_1.jpg", "wb") as f:
+    with open("current_image.jpg", "wb") as f:
         f.write(image_blob_1)
 
-    with open("output_image_2.jpg", "wb") as f:
+    with open("past_image.jpg", "wb") as f:
         f.write(image_blob_2)
 
     # CALL BONS CV HERE

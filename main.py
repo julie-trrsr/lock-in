@@ -1,6 +1,6 @@
 from brain_agent import EEGAgent
 def main() :
-  agent = EEGAgent("gpt-4o")
+  agent = EEGAgent("o3-mini-2025-01-31")
   eeg_data = {
       "window_length": 10,
       "sampling_rate": 10,

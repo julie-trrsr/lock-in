@@ -2,9 +2,9 @@ import openai
 import json
 from system_prompt import *
 from openai import OpenAI
-MODEL_NAME = "claude-3-sonnet-20240229"
 from brain_agent import EEGAgent
 from typing import Dict, Any, List, Optional
+import time
 
 class TopLevelAgent:
     """
@@ -17,27 +17,106 @@ class TopLevelAgent:
     def __init__(
         self,
         eeg_agent = EEGAgent,
+        model_name = MODEL_NAME
     ):
+        
         self.client = OpenAI()
-        self.assistant = self.client.
-        self.model_name = MODEL_NAME
+        self.instructions = jarvis_instructions
+        self.model_name = model_name
         self.eeg_agent = eeg_agent
+        self.eeg_agent_tool_description = eeg_agent_summary
+        self.vision_agent_tool_descriptions = vision_agent_summary
 
-        # Prepare the function schemas for the ChatCompletion call
-        self.tool_descriptions = [
-            self.eeg_agent.get_function_schema(),
-        ]
+        self.assistant = self.client.beta.assistants.create(
+          name = "Jarivs",
+          instructions = self.instructions,
+          tools=[{"type":"function", "function":self.eeg_agent_tool_description}],
+          model = self.model_name
+        )
 
-        # We'll maintain a running conversation log:
-        self.messages: List[Dict[str, Any]] = []
+        self.thread  = self.client.beta.threads.create()
 
-    def _append_message(self, role: str, content: str, name: Optional[str] = None):
-        """
-        Helper to append messages to the conversation log.
-        """
-        if name:
-            self.messages.append({"role": role, "name": name, "content": content})
-        else:
-            self.messages.append({"role": role, "content": content})
 
-    def run_analysis(self, eeg_data: Dict[str, Any], image_paths: List[str]) -> str:
+    def run_analysis(self, eeg_data: Dict[str, Any], image_urls) -> str:
+      image_files = []
+
+      for url in image_urls :
+        image_file = self.client.files.create(file = open(url, "rb"), purpose="vision")
+        image_files.append(image_file)
+
+      full_msg = [{"type" : "text", "content": jarvis_prompt + f"\n {eeg_data}"}]
+
+      for image in image_files : 
+        full_msg.append({
+          "type": "image_file",
+          "image_file": {"file_id": image.id}
+        })
+
+
+      self.client.beta.threads.messages.create(
+         thread_id = self.thread.id,
+         role = "user",
+         content = full_msg
+      )
+
+      run = self.client.beta.threads.runs.create_and_poll(
+         thread_id = self.thread.id,
+         assistant_id=self.assistant.id,
+         tool_choice = "required",
+         tool = [{"type":"function", "function" : self.eeg_agent_tool_description}, {"type":"function", "function" : self.vision_agent_tool_descriptions}]
+      )
+
+      response = None
+      while True : 
+         
+        if run.status == "requires_action" :
+          tool = run.required_action.submit_tool_outputs.tool_calls[0]
+          tool_output = None
+
+          if tool.function.name == "process_eeg_data" :
+            eeg_response = self.eeg_agent.process_eeg_data(eeg_data)
+            tool_output = [{"tool_call_id" : tool.id, "output" : eeg_response}]
+
+          elif tool.function.name == "process_images" :
+            image_response = self.vision_agent.process()
+
+          else : 
+            error_msg = {"error": f"Unknown function '{tool.function.name}'."}
+            self.client.beta.threads.messages.create(
+              thread_id=self.thread.id,
+              role="function",
+              name=tool.function.name,
+              content=json.dumps(error_msg)
+            )
+
+          if tool_output : 
+            run = self.client.beta.threads.runs.submit_tool_outputs_and_poll(
+              thread_id=self.thread.id,
+              run_id = run.id,
+              tool_outputs=tool_output
+            )
+
+        elif run.status == "completed" :
+          response_id = self.client.beta.threads.messages.list(
+            thread_id=self.thread.id
+          ).last_id
+
+          response = self.client.beta.threads.messages.list(
+             thread_id=self.thread.id
+          )
+
+          break
+
+        elif run.status == "failed" :
+          print(run.status)
+          print(f"[-] ERROR : {run.last_error} ")
+          pass
+
+        
+        else :
+          print(run.status)
+          time.sleep(2)
+          pass
+          
+
+      return response

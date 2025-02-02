@@ -1,11 +1,27 @@
 import json
 import math
+import openai
 from typing import List, Dict, Any
 from openai import OpenAI
+import os
+import time
+from dotenv import load_dotenv
+# Load variables from the .env file
+load_dotenv()
 
+# Retrieve the OpenAI API key
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if not openai_api_key:
+    raise ValueError("OpenAI API key not found. Please set it in the .env file.")
+
+
+openai.api_key = openai_api_key
 MODEL_NAME = "4o"
+brain_agent_instructions = "You are an expert in neuroscience and behavioral analysis.\
+                            Your Goal is to analyze the EEG data sampled over a window interval. \
+                            In your analysis you must describe the behaviour of the users brainwaves \
+                            and provide an insightful hypothesis on what state the user is in (ie. focused, relaxed, attentive, losing attention)"
 
-brain_agent_instructions = "You are an expert in neuroscience and behavioral analysis."
 
 class EEGAgent:
     """
@@ -18,11 +34,12 @@ class EEGAgent:
         self.model_name = model_name
 
         # Prepare the function schema (tool) we'll allow the assistant to call
-        eeg_tool = self.get_function_schema()
+        self.eeg_tool = self.get_function_schema()
 
         # Summaries stored for references (if needed)
-        self.tool_summaries = {"get_eeg_summary": eeg_tool}
-        self.analyse_eeg_prompt = "Analyse this EEG data."
+        self.tool_summaries = {"get_eeg_summary": self.eeg_tool}
+        self.analyse_eeg_prompt = "Here is the EEG data sampled, it contains the values of different brainwave frequencies. \
+                                  Please tell me what patterns you see and what is the overall trend of my brainwaves"
         self.instructions = brain_agent_instructions
 
         # Initialize the OpenAI client
@@ -32,7 +49,7 @@ class EEGAgent:
         self.assistant = self.client.beta.assistants.create(
             name="EEG Data Analyst",
             instructions=self.instructions,
-            tools=[{"type": "function"}],  # indicates we allow function calling
+            tools=[{"type": "function", "function": self.eeg_tool}],  # Now including the function schema
             model=self.model_name
         )
 
@@ -41,6 +58,7 @@ class EEGAgent:
 
     def set_default_prompt(self, prompt):
        self.analyse_eeg_prompt = prompt
+
     def process_eeg_data(self, eeg_data: Dict[str, Any]) -> str:
       """
       This method sends the EEG data to the assistant for analysis,
@@ -62,62 +80,38 @@ class EEGAgent:
       )
 
       # 2. Create a run to let the assistant process the conversation
-      run = self.client.beta.threads.runs.create(
+      run = self.client.beta.threads.runs.create_and_poll(
         thread_id=self.thread.id,
         assistant_id=self.assistant.id,
         tool_choice = "required",
-        tools = {"type" : "function", "function" : self.tool_summaries["get_eeg_summary"]}
+        tools = [{"type" : "function", "function" :  self.eeg_tool}]
       )
 
       # 3. We now step through the run until we reach a "final" response.
       response = None
       while True:
-        # Move the run forward (assistant processes next step)
-        # run = self.client.beta.threads.runs.update(
-        #   thread_id=self.thread.id,
-        #   run_id=run.id,
-        #   action="next"
-        # )
 
-        # Check the run status
-        if run.status == "completed":
-          # We can get the final answer from the last assistant message:
-          # or from run.result if your library populates that.
-          # In the beta API, you may retrieve it from `run.result`.
-          response = self.client.beta.threads.messages.list(
-            thread_id=self.thread.id
-          )[-1]
-          break
-
-        elif run.status == "action_required":
-          # If action_required, the assistant is calling a tool (function).
-          # The arguments for the function call are in the last message from the assistant.
-          last_message = self.client.beta.threads.messages.list(thread_id=self.thread.id)[-1]
-
-          # The content typically contains JSON with the function call details
-          function_call = json.loads(last_message.content)
-          function_name = function_call["name"]
-          function_args = function_call["arguments"]
-
-          tool = run.required_action.submit_tool_outputs.tool_calls
+        if run.status == "requires_action":
+          tool = run.required_action.submit_tool_outputs.tool_calls[0]
           tool_output = None
           
           # We check which function is being called. In this example, we have only "get_eeg_summary".
           if tool.function.name == "get_eeg_summary":
             # Execute the local Python function
-            summary_result = self.get_eeg_summary(**function_args)
+            summary_result = self.get_eeg_summary(eeg_data)
 
             # Convert result to JSON
             summary_json = json.dumps(summary_result)
-            tool_output = {"tool_call_id" : tool.id, "output" : summary_json}
+            tool_output = [{"tool_call_id" : tool.id, "output" : summary_json}]
+
 
           else:
             # If there's an unknown function name, handle appropriately
-            error_msg = {"error": f"Unknown function '{function_name}'."}
+            error_msg = {"error": f"Unknown function '{tool.function.name}'."}
             self.client.beta.threads.messages.create(
               thread_id=self.thread.id,
               role="function",
-              name=function_name,
+              name=tool.function.name,
               content=json.dumps(error_msg)
             )
 
@@ -128,12 +122,38 @@ class EEGAgent:
               tool_outputs=tool_output
             )
 
-        else:
+
+        elif run.status == "completed":
+
+          response_id = self.client.beta.threads.messages.list(
+            thread_id=self.thread.id
+          ).last_id
+
+          response = self.client.beta.threads.messages.list(
+             thread_id=self.thread.id
+          )
+
+          break
+
+
+        elif run.status == "failed":
           print(run.status)
+          print(f"[-] ERROR : {run.last_error} ")
           pass
 
-      # 4. final_answer now contains the assistant’s last response text
+
+        else :
+          print(run.status)
+          time.sleep(2)
+          pass
+
+
+        time.sleep(1)
+
+
       return response
+
+
 
     def get_eeg_summary(self, eeg_data: Dict[str, Any]) -> Dict[str, Any]:
         """

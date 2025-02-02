@@ -1,3 +1,5 @@
+// Library by: https://github.com/kitschpatrol/Brain
+
 #ifndef Brain_h
 #define Brain_h
 

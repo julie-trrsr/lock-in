@@ -8,6 +8,8 @@ import { Login } from "@/components/Login";
 import { Message } from "@/components/Message";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js";
 import { Bar } from "react-chartjs-2";
+import Link from "next/link";
+
 
 ChartJS.register(
   CategoryScale,
@@ -22,10 +24,10 @@ ChartJS.register(
 export default function Home() {
   const [lockedIn, setLockedIn] = useState(false);
   const [animating, setAnimating] = useState(false);
-  const [userId, setUserId] = useState("");
+  const [userId, setUserId] = useState("a");
   const [openLogin, setOpenLogin] = useState(false);
   const [openUserModal, setOpenUserModal] = useState(false);
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState("maria");
   const [password, setPassword] = useState("");
   const [incorrectPassword, setIncorrectPassword] = useState(false);
   const [userAlreadyExists, setUserAlreadyExists] = useState(false);
@@ -183,14 +185,20 @@ export default function Home() {
                   <div className="mt-2 w-28  rounded-xl shadow-lg z-50">
                     <ul className="text-end">
                       <li className="px-4 py-2 mb-0.5 text-sm cursor-default text-gray-500">{username}</li>
-                      <li className="px-4 py-2 hover:bg-gray-200 cursor-pointer">History</li>
+                      <li className="px-4 py-2 hover:bg-gray-200 cursor-pointer">
+                        <Link href={`./history`} className="w-full h-full">
+                          History
+                        </Link>
+                      </li>
                       <li className="px-4 py-2 hover:bg-gray-200 cursor-pointer" onClick={() => { 
                         setUserId("");
                         setUsername("");
                         setPassword("");
                         setUserAlreadyExists(false);
                         setIncorrectPassword(false); 
-                        }}>Log out</li>
+                        }}>
+                          Log out
+                      </li>
                     </ul>
                   </div>
                 )}

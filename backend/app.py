@@ -23,14 +23,30 @@ def home():
 def getPastMessages():
     try:
         # Get parameters
-        userID = request.args.get('userID')  # Extract 'userID' from the query parameters
+        conn = sqlite3.connect('database.db')
+        cur = conn.cursor()
 
-        if not userID:
-            return jsonify({"response": "failure", "error": "Missing userID parameter"}), 400
+        data = request.get_json(force=True)
+        userID = data["userID"]
 
-        # SQLITE CODE HERE
-        response = {}
-        return jsonify(response)
+        response = tools.get_all_messages_per_user(userID, cur)
+        return jsonify({"messages": response})
+
+    except Exception as e:
+        return jsonify({"response": "failure", "error": str(e)}), 500
+    
+# returns all log ids for a given user
+@app.route('/getAllLogsPerUser', methods=['GET'])
+def getAllLogsPerUser():
+    try:
+        conn = sqlite3.connect('database.db')
+        cur = conn.cursor()
+
+        data = request.get_json(force=True)
+        userID = data["userID"]
+
+        logsID = tools.get_log_id_per_user(userID, cur)
+        return jsonify({"logsID": logsID})
 
     except Exception as e:
         return jsonify({"response": "failure", "error": str(e)}), 500

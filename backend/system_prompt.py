@@ -148,7 +148,12 @@ brain_agent_instructions = "You are an expert in neuroscience and behavioral ana
                               beta_wave_analysis : ['YOUR ANALYSIS OF BETA WAVES'], \
                               gamma_wave_analysis : ['YOUR ANALYSIS OF GAMMA WAVES'], \
                               delta_wave_analysis : ['YOUR ANALYSIS OF GAMMA WAVES'], \
-                              attention_analysis : ['YOUR ANALYSIS OF ATTENTION VALUES'],"
+                              attention_analysis : ['YOUR ANALYSIS OF ATTENTION VALUES'], \
+                        - GIVEN A COLLECTION OF EEG DATA SAMPLES (BRAINWAVE SIGNAL AMPLITUDES) YOU MUST DETECT THE FOLLOWING \
+                          1. THE MOMENT THE USER HAS LOST THEIR ATTENTIVENESS (if they have at all) AND MOMEMNTS LEADING UP TO IT \
+                        \
+                        YOU MUST THEN PROVIDE A DETAILED REPORT THAT EXPLAINS WHAT HAPPENED, IF THE USER HAS LOST THEIR ATTENTION IN THE GIVEN PERIOD  \
+                        YOUR RESPONSE MUST NOT INCLUDE ANY MARKDOWN DECORATIONS SUCH AS '#', '**', etc"
 
 brain_agent_prompt = "Here is the EEG data sampled, it contains the values of different brainwave frequencies. \
-                    Please tell me what patterns you see and what is the overall trend of my brainwaves"
+                    Please tell me what patterns you see and what is the overall trend of my brainwaves and if i am focussed or not"

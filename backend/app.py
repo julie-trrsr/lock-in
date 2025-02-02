@@ -8,6 +8,7 @@ import base64
 import tools
 import jarvis
 import time
+import asyncio
 
 # buffer last 20 samples
 BUFFER_SIZE = 20
@@ -18,7 +19,6 @@ CORS(app)
 
 visionAgent = jarvis.AgentCoordinator()
 eegAgent = jarvis.EEGAgent()
-topLevelAgent = jarvis.TopLevelAgent(visionAgent, eegAgent)
 
 def condense(summaries):
     condensed = {}
@@ -31,28 +31,42 @@ def condense(summaries):
     
     return condensed
 
-eeg_data = {
-    "window_length": 10,
-    "sampling_rate": 10,
-    "alpha_waves": [23, 45, 67, 54, 32, 71, 49, 50, 19, 30],
-    "beta_waves": [42, 68, 86, 90, 72, 56, 44, 99, 86, 63],
-    "gamma_waves": [150, 200, 198, 220, 180, 210, 240, 255, 230, 190],
-    "delta_waves": [5, 3, 10, 7, 25, 22, 15, 8, 2, 14],
-    "theta_waves": [10, 20, 35, 40, 25, 45, 30, 38, 12, 27],
-    "attention_levels": [70, 72, 68, 90, 55, 60, 85, 92, 100, 77]
-}
+# eeg_data = {
+#     "window_length": 10,
+#     "sampling_rate": 10,
+#     "alpha_waves": [23, 45, 67, 54, 32, 71, 49, 50, 19, 30],
+#     "beta_waves": [42, 68, 86, 90, 72, 56, 44, 99, 86, 63],
+#     "gamma_waves": [150, 200, 198, 220, 180, 210, 240, 255, 230, 190],
+#     "delta_waves": [5, 3, 10, 7, 25, 22, 15, 8, 2, 14],
+#     "theta_waves": [10, 20, 35, 40, 25, 45, 30, 38, 12, 27],
+#     "attention_levels": [70, 72, 68, 90, 55, 60, 85, 92, 100, 77]
+# }
+def vp(image_urls):
+    claude_image_files = []
+    for url in image_urls:
+        image_content = {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "image/jpeg",
+                            "data": base64.standard_b64encode(open(url, 'rb').read()).decode('utf-8')
+                        }
+                    }
+        claude_image_files.append(image_content)
+    return claude_image_files
+        
+# eeg_resp = eegAgent.process_eeg_data(eeg_data)
 
-eeg_resp = eegAgent.process_eeg_data(eeg_data)
-image_response = visionAgent.process_frame(["result.jpg"])
-if eeg_resp:
-    print("Got Agent Response: ", eeg_resp)
-else:
-    print("Failed to Get Response", eeg_resp)
+# image_response = visionAgent.process_frame(vp(["./result.jpg"]))
+# if eeg_resp:
+#     print("Got Agent Response: ", eeg_resp)
+# else:
+#     print("Failed to Get Response", eeg_resp)
     
-if image_response:
-    print("Got Agent Response: ", image_response)
-else:
-    print("Failed to Get Response", image_response)
+# if image_response:
+#     print("Got Agent Response: ", image_response)
+# else:
+#     print("Failed to Get Response", image_response)
 
 @app.route('/')
 def home():
@@ -114,7 +128,7 @@ def uploadImage():
 
     with open("past_image.jpg", "wb") as f:
         f.write(image_blob_2)
-
+    
     # CALL BONS CV HERE
 
     return jsonify({"response": "success"})

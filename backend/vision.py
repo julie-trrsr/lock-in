@@ -202,7 +202,7 @@ class SenarioClassifierAgent(base_agent):
         super().__init__(system_prompt, system_query)
         
     def process(self, message):
-        return  self.process_with_claude(message=message)
+        return self.process_with_claude(message=message)
     
 class SuccessfulClassifierAgent(base_agent):
     def __init__(self):
@@ -242,25 +242,25 @@ class AgentCoordinator:
         """ a single frame through all agents"""
         try:
             # Level 1: Perception
-            object_output =  self.object_classifier.process(image_data)
-            action_output =  self.action_classifier.process(image_data)
+            object_output =   self.object_classifier.process(image_data)
+            action_output =   self.action_classifier.process(image_data)
             print("Object output", object_output)
             print("Action output", action_output)
             
             # Level 2: Goal Tracking
-            goal_output =  self.goal_classifier.process(image_data)
-            progress_output =  self.progress_classifier.process(image_data)
+            goal_output =   self.goal_classifier.process(image_data)
+            progress_output =   self.progress_classifier.process(image_data)
             print("Goal output", goal_output)
             print("Progress output", progress_output)
             
             # Level 3: Analysis
             scenario_output =  self.scenario_classifier.process(object_output[0].text + action_output[0].text)
-            success_output =  self.success_classifier.process(goal_output[0].text + progress_output[0].text)
+            success_output =   self.success_classifier.process(goal_output[0].text + progress_output[0].text)
             print("Scenario output", scenario_output)
             print("Success output", success_output)
             
             # Level 4: Recommendation
-            improvement_output =  self.distraction_improvement.process(image_data, scenario_output[0].text + success_output[0].text)
+            improvement_output =   self.distraction_improvement.process(image_data, scenario_output[0].text + success_output[0].text)
             print("Improvement output", improvement_output)
             
             return improvement_output[0].text

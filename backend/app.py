@@ -42,12 +42,17 @@ eeg_data = {
     "attention_levels": [70, 72, 68, 90, 55, 60, 85, 92, 100, 77]
 }
 
-resp = topLevelAgent.run_analysis(eeg_data, ["./output_image_1.jpg"])
-if resp:
-    print("Got Agent Response: ", resp)
+eeg_resp = eegAgent.process_eeg(eeg_data)
+image_response = visionAgent.process_frame(["result.jpg"])
+if eeg_resp:
+    print("Got Agent Response: ", eeg_resp)
 else:
-    print("Failed to Get Response", resp)
+    print("Failed to Get Response", eeg_resp)
     
+if image_response:
+    print("Got Agent Response: ", image_response)
+else:
+    print("Failed to Get Response", image_response)
 @app.route('/')
 def home():
     return jsonify({"message": "hello, i'm your brain"})

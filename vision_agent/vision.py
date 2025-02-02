@@ -122,7 +122,7 @@ tool_definition = {
 # print(message)
 
 
-import role
+import vision_agent.role as role
 target_model = "claude-3-5-sonnet-20241022"
 
 
@@ -224,8 +224,8 @@ class DistractionClassifierAgent(base_agent):
 
         super().__init__(system_prompt, system_query)
         
-    async def process(self, message):
-        return await self.process_with_claude(message=message)
+    async def process(self, image, message):
+        return await self.process_with_claude(image, message=message)
 
 
 
@@ -261,7 +261,7 @@ class AgentCoordinator:
             print("Success output", success_output)
             
             # Level 4: Recommendation
-            improvement_output = await self.distraction_improvement.process(scenario_output[0].text + success_output[0].text)
+            improvement_output = await self.distraction_improvement.process(image_data, scenario_output[0].text + success_output[0].text)
             print("Improvement output", improvement_output)
             
             return {
@@ -279,28 +279,28 @@ class AgentCoordinator:
             raise
 
 
-async def main():
-    coordinator = AgentCoordinator()
-    content = []
-    image_content = {
-        "type": "image",
-        "source": {
-            "type": "base64",
-            "media_type": "image/jpeg",
-            "data": base64.standard_b64encode(open('data/working.jpeg', 'rb').read()).decode("utf-8")
-        }
-    }
-    content.append(image_content)
-    image_content = {
-        "type": "image",
-        "source": {
-            "type": "base64",
-            "media_type": "image/jpeg",
-            "data": base64.standard_b64encode(open('data/not_working.jpeg', 'rb').read()).decode("utf-8")
-        }
-    }
-    content.append(image_content)
-    results = await coordinator.process_frame(content)
-    print(results)
+# async def main():
+#     coordinator = AgentCoordinator()
+#     content = []
+#     image_content = {
+#         "type": "image",
+#         "source": {
+#             "type": "base64",
+#             "media_type": "image/jpeg",
+#             "data": base64.standard_b64encode(open('data/working.jpeg', 'rb').read()).decode("utf-8")
+#         }
+#     }
+#     content.append(image_content)
+#     image_content = {
+#         "type": "image",
+#         "source": {
+#             "type": "base64",
+#             "media_type": "image/jpeg",
+#             "data": base64.standard_b64encode(open('data/not_working.jpeg', 'rb').read()).decode("utf-8")
+#         }
+#     }
+#     content.append(image_content)
+#     results = await coordinator.process_frame(content)
+#     print(results)
 
-asyncio.run(main())
+# asyncio.run(main())

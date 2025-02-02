@@ -1,6 +1,7 @@
 import openai
 import os
 from dotenv import load_dotenv
+load_dotenv("secrets.env")
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
     raise ValueError("OpenAI API key not found. Please set it in the .env file.")

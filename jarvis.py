@@ -46,7 +46,7 @@ class TopLevelAgent:
       claude_image_files = []
 
       for url in image_urls :
-        image_file = self.client.files.create(file = open(url, "rb"), purpose="vision")
+        image_file = self.client.files.create(file = open(url, "r"), purpose="vision")
         image_files.append(image_file)
 
         image_content = {
@@ -54,7 +54,7 @@ class TopLevelAgent:
           "source": {
               "type": "base64",
               "media_type": "image/jpeg",
-              "data": base64.standard_b64encode(open(url, 'rb').read()).decode("utf-8")
+              "data": base64.standard_b64encode(open(url, 'r').read()).decode("utf-8")
           }
         }
         claude_image_files.append(image_content)

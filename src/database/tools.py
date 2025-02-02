@@ -33,8 +33,14 @@ def setup_database(conn):
         conn.commit()
 
     except sqlite3.OperationalError as e:
-        print("Failed to open database:", e)
-        raise e
+        print(f"OperationalError during setup: {e}")
+        conn.rollback()
+        raise
+
+    except sqlite3.DatabaseError as e:
+        print(f"DatabaseError during setup: {e}")
+        conn.rollback()
+        raise
 
 
 #NOTE: We assume that we always know that the log_id has been given to the log_table 
@@ -52,7 +58,16 @@ def add_user(username, user_id, password, cursor):
     - password (str)
     - cursor (sqlite3.Cursor)
     """
-    cursor.execute("INSERT INTO user_table VALUES (?, ?, ?)", (username, user_id, password))
+    try:
+        cursor.execute("INSERT INTO user_table VALUES (?, ?, ?)", (username, user_id, password))
+
+    except sqlite3.IntegrityError as e:
+        print(f"IntegrityError when adding user {username}: {e}")
+        raise
+
+    except sqlite3.DatabaseError as e:
+        print(f"DatabaseError when adding user {username}: {e}")
+        raise
 
 
 def does_username_already_exist(username, cursor):
@@ -66,9 +81,14 @@ def does_username_already_exist(username, cursor):
     Returns:
     - bool
     """
-    cursor.execute("SELECT 1 FROM user_table WHERE username = ? LIMIT 1", (username,))
-    count = cursor.fetchone()[0]
-    return count > 0
+    try:
+        cursor.execute("SELECT 1 FROM user_table WHERE username = ? LIMIT 1", (username,))
+        count = cursor.fetchone()[0]
+        return count > 0
+    
+    except sqlite3.DatabaseError as e:
+        print(f"DatabaseError when checking username existence: {e}")
+        raise
 
 
 def add_log(log_id, user_id, cursor):
@@ -80,7 +100,16 @@ def add_log(log_id, user_id, cursor):
     - user_id (int)
     - cursor (sqlite3.Cursor)
     """
-    cursor.execute("INSERT INTO log_table VALUES (?, ?)", (log_id, user_id))
+    try:
+        cursor.execute("INSERT INTO log_table VALUES (?, ?)", (log_id, user_id))
+
+    except sqlite3.IntegrityError as e:
+        print(f"IntegrityError when adding log {log_id} for user {user_id}: {e}")
+        raise
+
+    except sqlite3.DatabaseError as e:
+        print(f"DatabaseError when adding log {log_id} for user {user_id}: {e}")
+        raise
 
 
 def add_message(message_id, log_id, time, content, cursor):
@@ -94,8 +123,17 @@ def add_message(message_id, log_id, time, content, cursor):
     - content (str): The content of the message.
     - cursor (sqlite3.Cursor)
     """
-    cursor.execute("INSERT INTO message_table (message_id, log_id, time, content) VALUES (?, ?, ?, ?)",
-                   (message_id, log_id, time, content))
+    try:
+        cursor.execute("INSERT INTO message_table (message_id, log_id, time, content) VALUES (?, ?, ?, ?)",
+                    (message_id, log_id, time, content))
+        
+    except sqlite3.IntegrityError as e:
+        print(f"IntegrityError when adding message {message_id} for log {log_id}: {e}")
+        raise
+
+    except sqlite3.DatabaseError as e:
+        print(f"DatabaseError when adding message {message_id} for log {log_id}: {e}")
+        raise
 
 
 def get_user_infos_from_username(username, cursor):
@@ -109,9 +147,14 @@ def get_user_infos_from_username(username, cursor):
     Returns:
     - tuple: A tuple containing (user_id, password) if the user exists, or None if the user does not exist.
     """
-    cursor.execute("SELECT user_id, password FROM user_table WHERE username = ?", (username,))
-    user_info = cursor.fetchone()
-    return user_info
+    try:
+        cursor.execute("SELECT user_id, password FROM user_table WHERE username = ?", (username,))
+        user_info = cursor.fetchone()
+        return user_info
+    
+    except sqlite3.DatabaseError as e:
+        print(f"DatabaseError when retrieving user info for {username}: {e}")
+        raise
 
 
 def get_user_id_from_log(log_id, cursor):
@@ -125,11 +168,16 @@ def get_user_id_from_log(log_id, cursor):
     Returns:
     - int: The user_id associated with the log_id, or None if not found.
     """
-    result = cursor.execute("SELECT user_id FROM log_table WHERE log_id = ?", (log_id,))
-    user_id = result.fetchone()
+    try:
+        result = cursor.execute("SELECT user_id FROM log_table WHERE log_id = ?", (log_id,))
+        user_id = result.fetchone()
 
-    if user_id:
-        return user_id[0]
+        if user_id:
+            return user_id[0]
+        
+    except sqlite3.DatabaseError as e:
+        print(f"DatabaseError when retrieving user ID from log {log_id}: {e}")
+        raise
     
 
 def get_specific_message(message_id, cursor):
@@ -143,9 +191,14 @@ def get_specific_message(message_id, cursor):
     Returns:
     - tuple: (log_id, time, content of the message), or None if not found.
     """
-    result = cursor.execute("SELECT log_id, time, content FROM message_table WHERE message_id = ?", (message_id,))
-    row = result.fetchone()
-    return row
+    try:
+        result = cursor.execute("SELECT log_id, time, content FROM message_table WHERE message_id = ?", (message_id,))
+        row = result.fetchone()
+        return row
+    
+    except sqlite3.DatabaseError as e:
+        print(f"DatabaseError when retrieving message {message_id}: {e}")
+        raise
 
 
 def get_messages_per_log(log_id, cursor):
@@ -159,12 +212,17 @@ def get_messages_per_log(log_id, cursor):
     Returns:
     - list: A list of tuples (message_id, time, content), or an empty list if no messages are found.
     """
-    result = cursor.execute("SELECT message_id, time, content FROM message_table WHERE log_id = ?", (log_id,))
-    rows = result.fetchall()
+    try:
+        result = cursor.execute("SELECT message_id, time, content FROM message_table WHERE log_id = ?", (log_id,))
+        rows = result.fetchall()
+        
+        if rows:
+            return rows
+        return []
     
-    if rows:
-        return rows
-    return []
+    except sqlite3.DatabaseError as e:
+        print(f"DatabaseError when retrieving messages for log {log_id}: {e}")
+        raise
 
 
 def get_all_messages_per_user(user_id, cursor):
@@ -179,16 +237,21 @@ def get_all_messages_per_user(user_id, cursor):
     - list: A list of tuples (message_id, log_id, time, content) for each message the user is associated with,
             or an empty list if no messages are found.
     """
-    result = cursor.execute('''
-        SELECT m.message_id, m.log_id, m.time, m.content
-        FROM message_table m
-        JOIN log_table l ON l.log_id = m.log_id
-        WHERE l.user_id = ?
-    ''', (user_id,))
+    try:
+        result = cursor.execute('''
+            SELECT m.message_id, m.log_id, m.time, m.content
+            FROM message_table m
+            JOIN log_table l ON l.log_id = m.log_id
+            WHERE l.user_id = ?
+        ''', (user_id,))
+        
+        rows = result.fetchall()
+        
+        if rows:
+            return rows
+        return []
     
-    rows = result.fetchall()
-    
-    if rows:
-        return rows
-    return []
+    except sqlite3.DatabaseError as e:
+        print(f"DatabaseError when retrieving all messages for user {user_id}: {e}")
+        raise
 

@@ -25,7 +25,112 @@ jarvis_prompt = "HERE IS THE COLLECTED EEG DATA AND ACCOMPANYING IMAGES THAT SHO
                  ANALYZE THEM AND DETERMINE WHAT, IF ANYTHING, HAS DISTRACTED THE USER IN THIS TIME FRAME  - REMEMBER TO ADHERE TO YOUR INSTRUCTIONS: "
 
 
-vision_agent_summary = {"name" : "process_images"}
+vision_agent_summary = {
+   "name" : "process_images",
+   "description": (
+       "A multi-layer visual analysis system that processes images from the user's perspective "
+       "to understand their work environment, activities, and productivity patterns. "
+       "The system consists of several specialized sub-agents that work together to provide "
+       "comprehensive analysis and recommendations."
+   ),
+   "parameters": {
+       "type": "object",
+       "properties": {
+           "image_data": {
+               "type": "object",
+               "description": (
+                   "Real-time image data from user's field of view containing:\n"
+                   " - image_path: Path to the image file\n"
+                   " - timestamp: When the image was captured\n"
+                   " - resolution: Image dimensions\n"
+               ),
+               "properties": {
+                   "perception_layer": {
+                       "type": "object",
+                       "description": "First layer analysis of visual data",
+                       "properties": {
+                           "objects": {
+                               "type": "array",
+                               "description": "Detected objects in view",
+                               "items": {
+                                   "type": "object",
+                                   "properties": {
+                                       "type": {"type": "string"},
+                                       "confidence": {"type": "number"},
+                                       "location": {
+                                           "type": "object",
+                                           "properties": {
+                                               "x": {"type": "number"},
+                                               "y": {"type": "number"},
+                                               "w": {"type": "number"},
+                                               "h": {"type": "number"}
+                                           }
+                                       },
+                                       "relevance": {"type": "number"}
+                                   }
+                               }
+                           },
+                           "actions": {
+                               "type": "array",
+                               "description": "Detected user activities",
+                               "items": {
+                                   "type": "object",
+                                   "properties": {
+                                       "type": {"type": "string"},
+                                       "confidence": {"type": "number"},
+                                       "duration": {"type": "number"},
+                                       "intensity": {"type": "number"}
+                                   }
+                               }
+                           }
+                       }
+                   },
+                   "goal_tracking": {
+                       "type": "object",
+                       "description": "Analysis of progress and goal alignment",
+                       "properties": {
+                           "goal_alignment": {"type": "number"},
+                           "active_goals": {"type": "array", "items": {"type": "string"}},
+                           "progress_score": {"type": "number"},
+                           "velocity": {"type": "number"},
+                           "bottlenecks": {"type": "array", "items": {"type": "string"}}
+                       }
+                   },
+                   "scenario_analysis": {
+                       "type": "object",
+                       "description": "High-level situation understanding",
+                       "properties": {
+                           "scenario_type": {"type": "string"},
+                           "context": {"type": "string"},
+                           "success_score": {"type": "number"},
+                           "trajectory": {"type": "string"}
+                       }
+                   },
+                   "recommendations": {
+                       "type": "object",
+                       "description": "Actionable improvement suggestions",
+                       "properties": {
+                           "suggestion": {"type": "string"},
+                           "priority": {"type": "number"},
+                           "expected_impact": {"type": "number"},
+                           "implementation_ease": {"type": "number"}
+                       }
+                   }
+               },
+               "required": [
+                   "image_path",
+                   "timestamp",
+                   "resolution",
+                   "perception_layer",
+                   "goal_tracking",
+                   "scenario_analysis",
+                   "recommendations"
+               ]
+           }
+       },
+       "required": ["image_data"]
+   }
+}
 eeg_agent_summary =  {
     "name": "process_eeg_data",
     "description": (

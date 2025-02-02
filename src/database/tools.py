@@ -66,7 +66,7 @@ def does_username_already_exist(username, cursor):
     Returns:
     - bool
     """
-    cursor.execute("SELECT COUNT(*) FROM user_table WHERE username = ?", (username,))
+    cursor.execute("SELECT 1 FROM user_table WHERE username = ? LIMIT 1", (username,))
     count = cursor.fetchone()[0]
     return count > 0
 
@@ -179,19 +179,16 @@ def get_all_messages_per_user(user_id, cursor):
     - list: A list of tuples (message_id, log_id, time, content) for each message the user is associated with,
             or an empty list if no messages are found.
     """
-    result = cursor.execute("SELECT log_id FROM log_table WHERE user_id = ?", (user_id,))
+    result = cursor.execute('''
+        SELECT m.message_id, m.log_id, m.time, m.content
+        FROM message_table m
+        JOIN log_table l ON l.log_id = m.log_id
+        WHERE l.user_id = ?
+    ''', (user_id,))
+    
     rows = result.fetchall()
-
-    if not rows:
-        return []
     
-    all_messages = []
-    
-    # row = (log_id,)
-    for row in rows:
-        log_id = row[0]
-        messages = get_messages_per_log(log_id, cursor)
-        all_messages.extend(messages)
-    
-    return all_messages
+    if rows:
+        return rows
+    return []
 

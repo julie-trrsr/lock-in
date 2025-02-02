@@ -259,9 +259,9 @@ export default function Home() {
                   </p>
                 </div>
               ) : (
-                <>
+                <div className="flex h-full justify-center items-center">
                   <Bar data={barData}/>
-                </>
+                </div>
               )}
             </div>
             <div className="basis-1/3 p-4 pl-2">

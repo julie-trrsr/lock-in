@@ -6,8 +6,8 @@ def setup_database(conn):
 
         cur.execute('''
         CREATE TABLE IF NOT EXISTS user_table (
-            username TEXT PRIMARY KEY,
-            user_id INTEGER,
+            user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
             password TEXT
         )
         ''')
@@ -15,8 +15,7 @@ def setup_database(conn):
         cur.execute('''
         CREATE TABLE IF NOT EXISTS log_table (
             log_id INTEGER PRIMARY KEY,
-            user_id INTEGER,
-            FOREIGN KEY (user_id) REFERENCES user_table (user_id)
+            user_id INTEGER
         )
         ''')
 
@@ -25,8 +24,7 @@ def setup_database(conn):
             message_id INTEGER PRIMARY KEY,
             log_id INTEGER,
             time TEXT NOT NULL,
-            content TEXT NOT NULL,
-            FOREIGN KEY (log_id) REFERENCES log_table (log_id)
+            content TEXT NOT NULL
         )
         ''')
 
@@ -48,18 +46,22 @@ def setup_database(conn):
 
 #NOTE: Don't forget to commit (connector.commit()) any modification to the database
 
-def add_user(username, user_id, password, cursor):
+def add_user(username, password, cursor):
     """
     Add a new user to the `user_table`.
 
     Args:
     - username (str)
-    - user_id (int)
     - password (str)
     - cursor (sqlite3.Cursor)
+
+    Returns:
+    - user_id (int)
     """
     try:
-        cursor.execute("INSERT INTO user_table VALUES (?, ?, ?)", (username, user_id, password))
+        cursor.execute("INSERT INTO user_table (username, password) VALUES (?, ?)", (username, password))
+        user_id = cursor.lastrowid
+        return user_id
 
     except sqlite3.IntegrityError as e:
         print(f"IntegrityError when adding user {username}: {e}")

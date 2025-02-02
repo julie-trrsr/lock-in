@@ -6,6 +6,7 @@ import io
 from PIL import Image
 import base64
 import tools
+import jarvis
 
 # buffer last 20 samples
 BUFFER_SIZE = 20
@@ -14,6 +15,38 @@ latestBrainData = []
 app = Flask(__name__)
 CORS(app)
 
+# visionAgent = jarvis.AgentCoordinator()
+# eegAgent = jarvis.EEGAgent()
+# topLevelAgent = jarvis.TopLevelAgent(visionAgent, eegAgent)
+
+# def condense(summaries):
+#     condensed = {}
+    
+#     for summary in summaries:
+#         for key, value in summary.items():
+#             if key not in condensed:
+#                 condensed[key] = []  # Initialize an empty list if key doesn't exist
+#             condensed[key].append(value)  # Append the value to the corresponding list
+    
+#     return condensed
+
+# eeg_data = {
+#     "window_length": 10,
+#     "sampling_rate": 10,
+#     "alpha_waves": [23, 45, 67, 54, 32, 71, 49, 50, 19, 30],
+#     "beta_waves": [42, 68, 86, 90, 72, 56, 44, 99, 86, 63],
+#     "gamma_waves": [150, 200, 198, 220, 180, 210, 240, 255, 230, 190],
+#     "delta_waves": [5, 3, 10, 7, 25, 22, 15, 8, 2, 14],
+#     "theta_waves": [10, 20, 35, 40, 25, 45, 30, 38, 12, 27],
+#     "attention_levels": [70, 72, 68, 90, 55, 60, 85, 92, 100, 77]
+# }
+
+# resp = topLevelAgent.run_analysis(eeg_data, ["./output_image_1.jpg", "./output_image_2.jpg"])
+# if resp:
+#     print("Got Agent Response: ", resp)
+# else:
+#     print("Failed to Get Response", resp)
+    
 @app.route('/')
 def home():
     return jsonify({"message": "hello, i'm your brain"})

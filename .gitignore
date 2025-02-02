@@ -10,6 +10,10 @@
 *.jpeg
 **/*.jpeg
 
+#jpg
+*.jpg
+**/*.jpg
+
 # Ignore Python cache and compiled files
 __pycache__/
 **/__pycache__/

@@ -6,9 +6,11 @@ import time
 from openai import OpenAI
 import os
 import requests
-
+import asyncio
 from dotenv import load_dotenv
 from anthropic import Anthropic
+import json
+from abc import ABC, abstractmethod
 
 # Load environment variables from secrets.env
 load_dotenv("../secrets.env")
@@ -108,6 +110,7 @@ client = Anthropic(api_key=claude_api_key)
 message = client.messages.create(
     model="claude-3-5-sonnet-20241022",
     max_tokens=1024,
+    system= "You are a Visual Context Agent. Your role is to analyze images and identify key elements relevant to distraction detection:",
     messages=[
         {
             "role": "user",
@@ -117,4 +120,53 @@ message = client.messages.create(
     tools=[tool_definition],
 )
 print(message)
+
+
+import role
+target_model = "claude-3-5-sonnet-20241022"
+
+
+class base_agent(ABC):
+    def __init__(self, system_role, system_query):
+        self.client = Anthropic(api_key=claude_api_key)
+        self.system_role = system_role
+        self.system_query = system_query
+    
+    async def process_with_claude(self, input_images):
+        try:
+            combined_message = [{"role": "user", "type": "text", "text":self.system_query}]   
+            for input_image in input_images:
+                combined_message.append(input_image)
+            
+            response = await self.client.messages.create(
+                model=target_model,
+                system=self.system_role,
+                message= combined_message,
+                max_tokens=2048,
+            )
+            return json.loads(response.content)
+        except Exception as e:
+            print(f"Error calling Claude API: {str(e)}")
+            raise
+
+
+class ObjectClassifierAgent(base_agent):
+    def __init__(self):
+        system_prompt = role.object_classifier_agent
+        system_query = role.object_classifier_query
+        super().__init__(system_prompt, system_query)
+        
+    async def process(self, image_data):
+        return await self.process_with_claude(image_data)
+    
+class ObjectClassifierAgent(base_agent):
+    def __init__(self):
+        system_prompt = role.object_classifier_agent
+        system_query = role.object_classifier_query
+        super().__init__(system_prompt, system_query)
+        
+    async def process(self, image_data):
+        return await self.process_with_claude(image_data)
+
+
 

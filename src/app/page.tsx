@@ -98,8 +98,8 @@ export default function Home() {
         <div className="flex flex-col gap-8 row-start-2 items-center">
           <motion.div
             className=""
-            initial={{ position: "relative", x: "50%", y: "50%", scale: 1}}
-            animate={{ position: "absolute", top: 0, left: 0, marginLeft: "1rem", marginTop: "1rem", scale: 0.5 }}
+            initial={{ position: "absolute", top: "44%", left: "50%", transform: "translate(-50%, -50%) scale(1)"}}
+            animate={{ position: "fixed", top: 0, left: 0, marginLeft: "2.75rem", marginTop: "2.75rem", transform: "translate(-50%, -50%) scale(0.5)" }}
             transition={{ duration: 1, ease: "easeOut" }}
           >
             <CiLock className="w-20 h-20" />

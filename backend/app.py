@@ -6,6 +6,7 @@ import io
 from PIL import Image
 import base64
 import tools
+import time
 
 # buffer last 20 samples
 BUFFER_SIZE = 20
@@ -19,7 +20,7 @@ def home():
     return jsonify({"message": "hello, i'm your brain"})
 
 # returns all past messages for a given user
-@app.route('/getPastMessages', methods=['GET'])
+@app.route('/getPastMessages', methods=['POST'])
 def getPastMessages():
     try:
         # Get parameters
@@ -36,7 +37,7 @@ def getPastMessages():
         return jsonify({"response": "failure", "error": str(e)}), 500
     
 # returns all log ids for a given user
-@app.route('/getAllLogsPerUser', methods=['GET'])
+@app.route('/getAllLogsPerUser', methods=['POST'])
 def getAllLogsPerUser():
     try:
         conn = sqlite3.connect('database.db')
@@ -120,6 +121,7 @@ def addNewUser():
             userID = None
         else:
             userID = tools.add_user(username, password, cur)
+            conn.commit()
         # send to database
 
         return jsonify({"userID": userID})
@@ -158,26 +160,37 @@ def tryLogin():
 @app.route('/doesUserExist', methods=['POST'])
 def doesUserExist():
     try:
-        username = request.args.get('username')  # Extract 'userID' from the query parameters
+        conn = sqlite3.connect('database.db')
+        cur = conn.cursor()
+
+        data = request.get_json(force=True)
+        user_id = data["userID"]
 
         # check user in database
-        userExist = False
+        userExist = tools.does_username_already_exist(user_id)
 
         return jsonify({"userExist": userExist})
 
     except Exception as e:
         return jsonify({"response": "failure", "error": str(e)}), 500
     
-# upload new user
+# upload new log
 @app.route('/newLog', methods=['POST'])
 def newLog():
     try:
-        username = request.args.get('username')  # Extract 'userID' from the query parameters
-        timestamp = 100 # need to get this live
+        conn = sqlite3.connect('database.db')
+        cur = conn.cursor()
+
+        data = request.get_json(force=True)
+
+        userID = data["userID"]
+        timestamp = int(time.time())
 
         # add record to log table
+        logID = tools.add_log(userID, cur)
+        conn.commit()
 
-        return jsonify({"response": "success"})
+        return jsonify({"logID": logID})
 
     except Exception as e:
         return jsonify({"response": "failure", "error": str(e)}), 500

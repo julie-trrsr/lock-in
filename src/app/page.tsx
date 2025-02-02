@@ -1,23 +1,42 @@
 "use client"
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaUser } from "react-icons/fa"
 import { CiUnlock, CiLock } from "react-icons/ci";
 import { motion } from "framer-motion";
 import React from "react";
 import { Login } from "@/components/Login";
 import { Message } from "@/components/Message";
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js";
+import { Bar } from "react-chartjs-2";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 
 export default function Home() {
   const [lockedIn, setLockedIn] = useState(false);
   const [animating, setAnimating] = useState(false);
-  const [userId, setUserId] = useState("a");
+  const [userId, setUserId] = useState("");
   const [openLogin, setOpenLogin] = useState(false);
   const [openUserModal, setOpenUserModal] = useState(false);
-  const [username, setUsername] = useState("maria");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [incorrectPassword, setIncorrectPassword] = useState(false);
   const [userAlreadyExists, setUserAlreadyExists] = useState(false);
+  const labels = ["sleep", "meditative", "relaxed", "focused"];
+  const [barData, setBarData] = useState({ 
+    labels:labels,
+    datasets: [{
+      data: [0, 0, 0, 0]
+    }]
+  });
+  const [headsetOn, setHeadsetOn] = useState(false);
 
 
   const handleSignUp = async () => {
@@ -63,6 +82,33 @@ export default function Home() {
       setAnimating(false);
     }, 1000);
   };
+
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        await fetch(`http://172.20.10.11:5000/getLatestBrainData`, {
+          method: 'GET', 
+          headers: {"Accept": "application/json" },
+        }) 
+            .then(response => response.json())
+            .then(data => {
+              setBarData({
+                labels:labels,
+                datasets: [{
+                  data: [data.delta, data.theta, data.low_alpha, data.low_beta]
+                }]
+              });
+              setHeadsetOn(data.signal_strength !== 200);
+            });
+      } catch (error) {
+        console.error("Error fetching next signal:", error);
+      }
+    }, 1000); // Poll every 1 second
+
+    return () => clearInterval(interval);
+  }, []);
+
 
   return (
     <div className="relative flex flex-col items-center justify-center justify-items-center min-h-screen p-8 sm:p-20">
@@ -198,7 +244,17 @@ export default function Home() {
           </div>
           <div className="flex flex-1 w-full">
             <div className="basis-2/3 p-4 pr-2">
-              <div className="bg-stone-800 w-full h-full rounded-2xl"></div>
+              {!headsetOn ? (
+                <div className="flex bg-stone-800 w-full h-full rounded-2xl items-center justify-center">
+                  <p className="text-center text-white text-4xl p-4">
+                    Please reattach electrodes.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <Bar data={barData}/>
+                </>
+              )}
             </div>
             <div className="basis-1/3 p-4 pl-2">
               <div className="flex flex-col bg-stone-200 w-full h-full rounded-2xl items-start justify-start">

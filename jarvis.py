@@ -75,11 +75,11 @@ class TopLevelAgent:
          role = "user",
          content = jarvis_prompt
       )
-
+      print("running the annyoing part")
       run = self.client.beta.threads.runs.create_and_poll(
          thread_id = self.thread.id,
          assistant_id=self.assistant.id,
-         tool_choice = "required",
+        #  tool_choice = "required",
          tools = [{"type":"function", "function" : self.eeg_agent_tool_description}, {"type":"function", "function" : self.vision_agent_tool_descriptions}]
       )
 
@@ -87,7 +87,10 @@ class TopLevelAgent:
       while True : 
          
         if run.status == "requires_action" :
-          tool = run.required_action.submit_tool_outputs.tool_calls[0]
+          if run.required_action and run.required_action.submit_tool_outputs and run.required_action.submit_tool_outputs.tool_calls:
+            tool = run.required_action.submit_tool_outputs.tool_calls[0]
+          else:
+            raise RuntimeError("No tool calls available for action.")
           tool_output = None
 
           if tool.function.name == "process_eeg_data" :
@@ -128,14 +131,10 @@ class TopLevelAgent:
 
         elif run.status == "failed" :
           print(run.status)
-          print(f"[-] ERROR : {run.last_error} ")
-          pass
-
-        
+          print(f"[-] ERROR : {run.last_error} ")    
+          time.sleep(1000)       
+    
         else :
           print(run.status)
-          time.sleep(2)
-          pass
-          
-
+          time.sleep(1000)       
       return response
